@@ -1,12 +1,12 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { AchievementCard } from "@/components/achievements/achievement-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Sidebar } from "../components/layout/sidebar";
+import { Header } from "../components/layout/header";
+import { AchievementCard } from "../components/achievements/achievement-card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
 import { useState } from "react";
-import { AuthModal } from "@/components/auth/auth-modal";
+import { AuthModal } from "../components/auth/auth-modal";
 import { useQuery } from "@tanstack/react-query";
 import { Medal, Trophy, Star, Award, Lock } from "lucide-react";
 

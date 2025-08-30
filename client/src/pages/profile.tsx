@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
-import { AuthModal } from "@/components/auth/auth-modal";
-import { AchievementCard } from "@/components/achievements/achievement-card";
+import { AuthModal } from "../components/auth/auth-modal";
+import { AchievementCard } from "../components/achievements/achievement-card";
 import { useQuery } from "@tanstack/react-query";
 import { 
   User, 
@@ -44,6 +44,7 @@ interface UserAchievement {
   name: string;
   description: string;
   icon: string;
+  category: string;
   rarity: string;
   unlockedAt: string;
 }
@@ -296,7 +297,10 @@ export default function ProfilePage() {
                       {achievements.slice(0, 3).map((achievement) => (
                         <AchievementCard 
                           key={achievement.id}
-                          achievement={achievement}
+                          achievement={{
+                            ...achievement,
+                            rarity: achievement.rarity as "common" | "rare" | "epic" | "legendary"
+                          }}
                           compact
                         />
                       ))}
@@ -336,7 +340,10 @@ export default function ProfilePage() {
                     {achievements.map((achievement) => (
                       <AchievementCard 
                         key={achievement.id}
-                        achievement={achievement}
+                        achievement={{
+                          ...achievement,
+                          rarity: achievement.rarity as "common" | "rare" | "epic" | "legendary"
+                        }}
                       />
                     ))}
                   </div>

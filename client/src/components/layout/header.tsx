@@ -37,13 +37,17 @@ export function Header({
 
   return (
     <header className="bg-card border-b border-border p-6 flex items-center justify-between">
-      <div data-testid="header-title">
-        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-        <p className="text-muted-foreground">{description}</p>
+      <div className="flex items-center gap-4" data-testid="header-title">
+        <img src={require('../../assets/zkEngagelogo.png')} alt="zkEngage Logo" className="h-10 w-10 object-contain" />
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <p className="text-muted-foreground">{description}</p>
+        </div>
       </div>
-      
       <div className="flex items-center gap-4">
-        {/* zkVerify Status Indicator */}
+  {/* Banner Image (optional, can be moved elsewhere) */}
+  <img src={require('../../assets/zkEngagebanner.png')} alt="zkEngage Banner" className="h-10 object-contain hidden md:block" />
+  {/* zkVerify Status Indicator */}
         <div 
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
             zkVerifyStatus?.connected 

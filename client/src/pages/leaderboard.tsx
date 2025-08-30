@@ -1,11 +1,11 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { LeaderboardTable } from "@/components/leaderboard/leaderboard-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Sidebar } from "../components/layout/sidebar";
+import { Header } from "../components/layout/header";
+import { LeaderboardTable } from "../components/leaderboard/leaderboard-table";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 import { useState } from "react";
-import { AuthModal } from "@/components/auth/auth-modal";
+import { AuthModal } from "../components/auth/auth-modal";
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, Medal, Award, Users } from "lucide-react";
 

@@ -1,13 +1,13 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { TaskManager } from "@/components/admin/task-manager";
-import { SystemHealth } from "@/components/admin/system-health";
-import { AnalyticsPanel } from "@/components/admin/analytics-panel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Sidebar } from "../../components/layout/sidebar";
+import { Header } from "../../components/layout/header";
+import { TaskManager } from "../../components/admin/task-manager";
+import { SystemHealth } from "../../components/admin/system-health";
+import { AnalyticsPanel } from "../../components/admin/analytics-panel";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
 import { useState, useEffect, useRef } from "react";
-import { AuthModal } from "@/components/auth/auth-modal";
+import { AuthModal } from "../../components/auth/auth-modal";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Settings, 

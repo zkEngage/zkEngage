@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Separator } from "../../components/ui/separator";
+import { Badge } from "../../components/ui/badge";
 import { Shield, CheckCircle } from "lucide-react";
 import { SiX } from "react-icons/si";
-import { WalletConnect } from "@/components/auth/wallet-connect";
-import { useTwitterAuth } from "@/hooks/use-twitter-auth";
-import { useToast } from "@/hooks/use-toast";
+import { WalletConnect } from "../../components/auth/wallet-connect";
+import { useTwitterAuth } from "../../hooks/use-twitter-auth";
+import { useToast } from "../../hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Separator } from "../../components/ui/separator";
+import { Badge } from "../../components/ui/badge";
+import { useTwitterAuth } from "../../hooks/use-twitter-auth";
+import { useToast } from "../../hooks/use-toast";
 
 export default function SignupPage() {
   const [step, setStep] = useState<"auth" | "wallet">("auth");
