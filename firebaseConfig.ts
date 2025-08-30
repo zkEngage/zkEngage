@@ -7,14 +7,14 @@ import { getAnalytics } from "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCBISNTV8Q5tYtc_pX2KsFoCz4sPxrL3yI",
-  authDomain: "zkengage.firebaseapp.com",
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
   databaseURL: "https://zkengage-default-rtdb.firebaseio.com",
   projectId: "zkengage",
   storageBucket: "zkengage.firebasestorage.app",
   messagingSenderId: "650997000615",
   appId: "1:650997000615:web:849962c77267bbe216ee82",
-  measurementId: "G-NR1TWX0WDE"
+  measurementId: "G-Q03Y5G4ZHY"
 };
 
 // Initialize Firebase
