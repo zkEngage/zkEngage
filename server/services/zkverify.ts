@@ -233,8 +233,7 @@ class ZkVerifyService {
       timestamp: Date.now()
     });
   }
-}
-  }
+
 }
 
 export const zkVerifyService = new ZkVerifyService();

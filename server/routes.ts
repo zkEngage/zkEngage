@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { zkVerifyService } from "./services/zkverify";
 import { authService } from "./services/auth";
 import { z } from "zod";
-import { insertUserSchema, insertTaskSchema, insertUserTaskSchema, insertZkProofSchema } from "@shared/schema";
+import { insertUserSchema, insertTaskSchema, insertUserTaskSchema, insertZkProofSchema } from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let user = await storage.getUserByWalletAddress(walletAddress);
       
       if (!user) {
-        return res.status(404).json({ message: "User not found. Please connect Twitter first." });
+        return res.status(404).json({ message: "User not found. Please sign up first." });
       }
 
       // Update user with wallet info
@@ -380,12 +380,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/system-health", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
     try {
       const zkVerifyStatus = await zkVerifyService.getStatus();
-      const twitterStatus = await twitterOAuthService.getStatus();
       const dbStatus = await storage.getHealthStatus();
 
       res.json({
         zkVerify: zkVerifyStatus,
-        twitter: twitterStatus,
         database: dbStatus,
         timestamp: new Date().toISOString()
       });
