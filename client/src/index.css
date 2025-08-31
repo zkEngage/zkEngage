@@ -64,32 +64,42 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--border);
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    font-weight: 600; /* font-semibold */
+    letter-spacing: -0.015em; /* tracking-tight */
   }
 
   h1 {
-    @apply text-4xl;
+    font-size: 2.25rem; /* text-4xl */
+    line-height: 2.5rem;
   }
 
   h2 {
-    @apply text-3xl;
+    font-size: 1.875rem; /* text-3xl */
+    line-height: 2.25rem;
   }
 
   h3 {
-    @apply text-2xl;
+    font-size: 1.5rem; /* Equivalent to Tailwind's text-2xl */
+    line-height: 2rem;
   }
 
   h4 {
-    @apply text-xl;
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1.75rem;
   }
 }
 
@@ -128,45 +138,55 @@
 
   /* Badge styles */
   .badge-common {
-    @apply bg-gray-500/20 text-gray-300 border-gray-500/30;
+    background-color: rgba(107, 114, 128, 0.2); /* bg-gray-500/20 */
+    color: #d1d5db; /* text-gray-300 */
+    border-color: rgba(107, 114, 128, 0.3); /* border-gray-500/30 */
   }
 
   .badge-rare {
-    @apply bg-blue-500/20 text-blue-300 border-blue-500/30;
+    background-color: rgba(59, 130, 246, 0.2); /* bg-blue-500/20 */
+    color: #93c5fd; /* text-blue-300 */
+    border-color: rgba(59, 130, 246, 0.3); /* border-blue-500/30 */
   }
 
   .badge-epic {
-    @apply bg-purple-500/20 text-purple-300 border-purple-500/30;
+    background-color: rgba(139, 92, 246, 0.2); /* bg-purple-500/20 */
+    color: #c4b5fd; /* text-purple-300 */
+    border-color: rgba(139, 92, 246, 0.3); /* border-purple-500/30 */
   }
-
-  .badge-legendary {
-    @apply bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 border-yellow-500/30;
-  }
-
-  /* Task status indicators */
   .task-active {
-    @apply bg-primary/20 text-primary border-primary/30;
+    background-color: hsla(221, 83%, 53%, 0.2); /* bg-primary/20 */
+    color: hsl(221, 83%, 53%); /* text-primary */
+    border-color: hsla(221, 83%, 53%, 0.3); /* border-primary/30 */
   }
 
   .task-completed {
-    @apply bg-green-500/20 text-green-400 border-green-500/30;
+    background-color: rgba(34, 197, 94, 0.2); /* bg-green-500/20 */
+    color: #4ade80; /* text-green-400 */
+    border-color: rgba(34, 197, 94, 0.3); /* border-green-500/30 */
   }
 
+
   .task-new {
-    @apply bg-accent/20 text-accent border-accent/30;
+    background-color: rgba(59, 130, 246, 0.1); /* bg-blue-500/10 */
+    color: #3b82f6; /* text-blue-500 */
+    border-color: rgba(59, 130, 246, 0.2); /* border-blue-500/20 */
   }
 
   /* System health indicators */
   .health-online {
-    @apply bg-green-500/10 border-green-500/20;
+    background-color: rgba(34, 197, 94, 0.1); /* bg-green-500/10 */
+    border-color: rgba(34, 197, 94, 0.2);     /* border-green-500/20 */
   }
 
   .health-warning {
-    @apply bg-yellow-500/10 border-yellow-500/20;
+    background-color: rgba(253, 224, 71, 0.1); /* bg-yellow-500/10 */
+    border-color: rgba(253, 224, 71, 0.2);     /* border-yellow-500/20 */
   }
 
   .health-offline {
-    @apply bg-red-500/10 border-red-500/20;
+    background-color: rgba(239, 68, 68, 0.1); /* bg-red-500/10 */
+    border-color: rgba(239, 68, 68, 0.2);     /* border-red-500/20 */
   }
 }
 
@@ -216,18 +236,6 @@
   }
 }
 
-@keyframes level-up {
-  0% {
-    transform: translateY(0px) scale(1);
-  }
-  50% {
-    transform: translateY(-10px) scale(1.05);
-  }
-  100% {
-    transform: translateY(0px) scale(1);
-  }
-}
-
 /* Loading states */
 .loading-shimmer {
   background: linear-gradient(
@@ -240,60 +248,54 @@
   animation: shimmer 2s infinite;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 /* Responsive design helpers */
 @media (max-width: 768px) {
-  .mobile-nav-closed {
-    transform: translateX(-100%);
+  .wallet-connecting {
+    opacity: 0.5;
+    pointer-events: none;
   }
-  
-  .mobile-nav-open {
-    transform: translateX(0);
+
+  .wallet-connected {
+    box-shadow: 0 0 0 2px hsla(221, 83%, 53%, 0.5); /* ring-2 ring-primary ring-opacity-50 */
   }
-}
 
-/* Accessibility improvements */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
-}
+  .wallet-error {
+    box-shadow: 0 0 0 2px hsla(0, 63%, 31%, 0.5); /* ring-2 ring-destructive ring-opacity-50 */
+  }
 
-/* Dark mode toggle animation */
-.theme-transition {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-}
+  /* zkVerify status indicators */
+  .zkverify-connected {
+    color: #4ade80; /* text-green-400 */
+  }
 
-/* Wallet connection states */
-.wallet-connecting {
-  @apply opacity-50 pointer-events-none;
+  .zkverify-connecting {
+    color: #fde047; /* text-yellow-400 */
+  }
+
+  .zkverify-error {
+    color: #f87171; /* text-red-400 */
+  }
 }
 
 .wallet-connected {
-  @apply ring-2 ring-primary ring-opacity-50;
+  box-shadow: 0 0 0 2px hsla(221, 83%, 53%, 0.5); /* ring-2 ring-primary ring-opacity-50 */
 }
 
 .wallet-error {
-  @apply ring-2 ring-destructive ring-opacity-50;
+  box-shadow: 0 0 0 2px hsla(0, 63%, 31%, 0.5); /* ring-2 ring-destructive ring-opacity-50 */
 }
 
 /* zkVerify status indicators */
 .zkverify-connected {
-  @apply text-green-400;
+  color: #4ade80; /* text-green-400 */
 }
 
 .zkverify-connecting {
-  @apply text-yellow-400;
+  color: #fde047; /* text-yellow-400 */
 }
 
 .zkverify-error {
-  @apply text-red-400;
+  color: #f87171; /* text-red-400 */
 }
 
 /* Proof generation animation */

@@ -48,6 +48,11 @@ export function AnalyticsPanel() {
 
   const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/admin/analytics", timeframe],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/analytics?timeframe=${timeframe}`);
+      if (!res.ok) throw new Error("Failed to fetch analytics data");
+      return res.json();
+    },
     refetchInterval: 60000, // Refresh every minute
   });
 

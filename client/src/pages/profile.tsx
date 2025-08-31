@@ -1,10 +1,10 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Sidebar } from "../components/layout/sidebar";
+import { Header } from "../components/layout/header";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
+import { Separator } from "../components/ui/separator";
 import { useState } from "react";
 import { AuthModal } from "../components/auth/auth-modal";
 import { AchievementCard } from "../components/achievements/achievement-card";

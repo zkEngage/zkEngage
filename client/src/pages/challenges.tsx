@@ -1,9 +1,9 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { ChallengeCard } from "@/components/challenges/challenge-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Sidebar } from "../components/layout/sidebar";
+import { Header } from "../components/layout/header";
+import { ChallengeCard } from "../components/challenges/challenge-card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 import { useState } from "react";
 import { AuthModal } from "../components/auth/auth-modal";
 import { useQuery } from "@tanstack/react-query";

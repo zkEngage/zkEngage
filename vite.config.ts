@@ -12,7 +12,11 @@ export default defineConfig({
   plugins: [react()],
   root: './client',
   server: {
-    port: 5173,
+    port: 5173,   // pick a different port than your backend
+    proxy: {
+      '/api': 'http://localhost:3000', // proxy API calls to the backend server
+    },
+
   },
   resolve: {
     alias: {
