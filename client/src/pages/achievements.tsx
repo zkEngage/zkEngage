@@ -1,308 +1,224 @@
-import { Sidebar } from "../components/layout/sidebar";
-import { Header } from "../components/layout/header";
-import { AchievementCard } from "../components/achievements/achievement-card";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
-import { useState } from "react";
-import { AuthModal } from "../components/auth/auth-modal";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { Medal, Trophy, Star, Award, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import Sidebar from "@/components/layout/sidebar";
+import MobileHeader from "@/components/layout/mobile-header";
+import AchievementBadge from "@/components/achievements/achievement-badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
-interface Achievement {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  category: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
-  requirements: any;
-  isUnlocked: boolean;
-  unlockedAt?: string;
-  progress?: number;
-  maxProgress?: number;
-}
+export default function Achievements() {
+  const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-interface AchievementStats {
-  totalUnlocked: number;
-  totalAvailable: number;
-  rareUnlocked: number;
-  epicUnlocked: number;
-  legendaryUnlocked: number;
-  completionRate: number;
-}
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
 
-export default function AchievementsPage() {
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [filter, setFilter] = useState<"all" | "unlocked" | "locked">("all");
-  const [category, setCategory] = useState<"all" | "social" | "proof" | "engagement" | "milestone">("all");
-
-  const { data: achievements, isLoading } = useQuery<Achievement[]>({
-    queryKey: ["/api/achievements", filter, category],
+  const { data: achievements, isLoading: achievementsLoading } = useQuery({
+    queryKey: ["/api/achievements"],
   });
 
-  const { data: stats } = useQuery<AchievementStats>({
-    queryKey: ["/api/achievements/stats"],
+  const { data: userAchievements, isLoading: userAchievementsLoading } = useQuery({
+    queryKey: ["/api/achievements/user"],
   });
 
-  const filterOptions = [
-    { value: "all", label: "All", active: filter === "all" },
-    { value: "unlocked", label: "Unlocked", active: filter === "unlocked" },
-    { value: "locked", label: "Locked", active: filter === "locked" },
+  // Create a map of unlocked achievements
+  const unlockedMap = userAchievements?.reduce((acc: any, ua: any) => {
+    acc[ua.achievementId] = ua;
+    return acc;
+  }, {}) || {};
+
+  const categories = [
+    { id: "all", name: "All", color: "primary" },
+    { id: "development", name: "Development", color: "success" },
+    { id: "social", name: "Social", color: "accent" },
+    { id: "educational", name: "Educational", color: "yellow" },
+    { id: "milestones", name: "Milestones", color: "destructive" },
   ];
 
-  const categoryOptions = [
-    { value: "all", label: "All Categories", active: category === "all" },
-    { value: "social", label: "Social", active: category === "social" },
-    { value: "proof", label: "zkProof", active: category === "proof" },
-    { value: "engagement", label: "Engagement", active: category === "engagement" },
-    { value: "milestone", label: "Milestone", active: category === "milestone" },
-  ];
+  const filteredAchievements = achievements?.filter((achievement: any) => 
+    selectedCategory === "all" || achievement.category === selectedCategory
+  ) || [];
 
-  const filteredAchievements = achievements?.filter(achievement => {
-    if (filter === "unlocked" && !achievement.isUnlocked) return false;
-    if (filter === "locked" && achievement.isUnlocked) return false;
-    if (category !== "all" && achievement.category !== category) return false;
-    return true;
-  }) || [];
+  const unlockedCount = achievements?.filter((achievement: any) => 
+    unlockedMap[achievement.id]
+  ).length || 0;
 
-  const rarityStats = [
-    {
-      rarity: "legendary",
-      count: stats?.legendaryUnlocked || 0,
-      total: achievements?.filter(a => a.rarity === "legendary").length || 0,
-      color: "from-yellow-500 to-orange-500",
-      icon: Trophy,
-    },
-    {
-      rarity: "epic",
-      count: stats?.epicUnlocked || 0,
-      total: achievements?.filter(a => a.rarity === "epic").length || 0,
-      color: "from-purple-500 to-pink-500",
-      icon: Award,
-    },
-    {
-      rarity: "rare",
-      count: stats?.rareUnlocked || 0,
-      total: achievements?.filter(a => a.rarity === "rare").length || 0,
-      color: "from-blue-500 to-cyan-500",
-      icon: Star,
-    },
-    {
-      rarity: "common",
-      count: (stats?.totalUnlocked || 0) - (stats?.rareUnlocked || 0) - (stats?.epicUnlocked || 0) - (stats?.legendaryUnlocked || 0),
-      total: achievements?.filter(a => a.rarity === "common").length || 0,
-      color: "from-gray-500 to-gray-600",
-      icon: Medal,
-    },
-  ];
+  if (!isLoading && !isAuthenticated) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-64">
-        <Header 
-          onConnectWallet={() => setShowAuthModal(true)}
-          title="Achievements"
-          description="Unlock badges and showcase your zkEngage journey"
-        />
+    <div className="min-h-screen bg-background flex">
+      <Sidebar currentPage="achievements" />
+      
+      <main className="flex-1 md:ml-0">
+        <MobileHeader />
         
-        <main className="p-6 space-y-6">
+        <div className="p-6">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">Achievements</h1>
+            <p className="text-muted-foreground">
+              Unlock badges and showcase your zkVerify expertise
+            </p>
+          </motion.div>
+
           {/* Progress Overview */}
-          <Card className="zkverify-gradient text-primary-foreground">
-            <CardContent className="p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-card rounded-lg border border-border p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Achievement Progress</h2>
-                  <p className="opacity-90">
-                    {stats?.totalUnlocked || 0} of {stats?.totalAvailable || 0} achievements unlocked
+                  <h3 className="text-lg font-semibold" data-testid="text-progress-title">
+                    Achievement Progress
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {unlockedCount} of {achievements?.length || 0} achievements unlocked
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    {stats?.completionRate?.toFixed(1) || 0}%
+                  <div className="text-2xl font-bold gradient-text" data-testid="text-progress-percentage">
+                    {achievements?.length ? Math.round((unlockedCount / achievements.length) * 100) : 0}%
                   </div>
-                  <div className="text-sm opacity-90">Complete</div>
+                  <p className="text-sm text-muted-foreground">Complete</p>
                 </div>
               </div>
-              <Progress 
-                value={stats?.completionRate || 0} 
-                className="h-3 bg-white/20"
-                data-testid="achievement-progress"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Rarity Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {rarityStats.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <Card key={stat.rarity} className="stat-card" data-testid={`stat-${stat.rarity}`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
-                        <Icon className="text-white text-xl" />
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">
-                          {stat.count}/{stat.total}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium capitalize">{stat.rarity}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {stat.total > 0 ? Math.round((stat.count / stat.total) * 100) : 0}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={stat.total > 0 ? (stat.count / stat.total) * 100 : 0} 
-                        className="h-1.5"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Filters and Achievements */}
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Badge Collection</CardTitle>
-                  <p className="text-muted-foreground">
-                    Earn badges by completing challenges and generating zkProofs
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {filterOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      variant={option.active ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilter(option.value as any)}
-                      className={option.active ? "zkverify-gradient" : ""}
-                      data-testid={`filter-${option.value}`}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                  <div className="w-px bg-border mx-2"></div>
-                  {categoryOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      variant={option.active ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => setCategory(option.value as any)}
-                      data-testid={`category-${option.value}`}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
+              <div className="w-full bg-muted rounded-full h-3">
+                <div 
+                  className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${achievements?.length ? (unlockedCount / achievements.length) * 100 : 0}%` 
+                  }}
+                  data-testid="progress-bar"
+                />
               </div>
-            </CardHeader>
-            
-            <CardContent>
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i} className="loading-shimmer h-40 rounded-lg"></div>
-                  ))}
-                </div>
-              ) : filteredAchievements.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredAchievements.map((achievement) => (
-                    <AchievementCard 
-                      key={achievement.id} 
-                      achievement={achievement}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Lock className="mx-auto text-muted-foreground mb-4" size={48} />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    No achievements found
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    Try adjusting your filters or complete more challenges to unlock badges
-                  </p>
-                  <Button 
-                    onClick={() => {
-                      setFilter("all");
-                      setCategory("all");
-                    }}
-                    data-testid="button-clear-filters"
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
-          {/* Achievement Guide */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="text-primary" size={20} />
-                How to Earn Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/20">
-                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Trophy className="text-primary" size={20} />
-                  </div>
-                  <h4 className="font-semibold mb-2">Social</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Connect accounts, share content, engage with community
-                  </p>
-                </div>
+          {/* Achievement Categories */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-wrap gap-4 mb-8"
+          >
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                onClick={() => setSelectedCategory(category.id)}
+                className="font-medium"
+                data-testid={`filter-${category.id}`}
+              >
+                {category.name}
+              </Button>
+            ))}
+          </motion.div>
 
-                <div className="text-center p-4 bg-secondary/10 rounded-lg border border-secondary/20">
-                  <div className="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Medal className="text-secondary" size={20} />
-                  </div>
-                  <h4 className="font-semibold mb-2">zkProof</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Generate and verify zero-knowledge proofs
-                  </p>
+          {/* Achievements Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {achievementsLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-lg border border-border p-6 text-center">
+                  <Skeleton className="w-16 h-16 rounded-full mx-auto mb-4" />
+                  <Skeleton className="h-4 w-24 mx-auto mb-2" />
+                  <Skeleton className="h-3 w-32 mx-auto mb-3" />
+                  <Skeleton className="h-4 w-20 mx-auto" />
                 </div>
-
-                <div className="text-center p-4 bg-accent/10 rounded-lg border border-accent/20">
-                  <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Star className="text-accent" size={20} />
-                  </div>
-                  <h4 className="font-semibold mb-2">Engagement</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Complete challenges and maintain activity
-                  </p>
-                </div>
-
-                <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                  <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Award className="text-green-500" size={20} />
-                  </div>
-                  <h4 className="font-semibold mb-2">Milestone</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Reach XP, level, and community milestones
-                  </p>
-                </div>
+              ))
+            ) : filteredAchievements.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <i className="fas fa-trophy text-6xl text-muted-foreground/50 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Achievements Found</h3>
+                <p className="text-muted-foreground">
+                  Try selecting a different category or check back later!
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
+            ) : (
+              filteredAchievements.map((achievement: any) => {
+                const userAchievement = unlockedMap[achievement.id];
+                return (
+                  <AchievementBadge
+                    key={achievement.id}
+                    achievement={achievement}
+                    isUnlocked={!!userAchievement}
+                    unlockedAt={userAchievement?.unlockedAt}
+                    progress={userAchievement?.progress}
+                    maxProgress={userAchievement?.maxProgress}
+                  />
+                );
+              })
+            )}
+          </motion.div>
 
-      <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+          {/* Achievement Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            <div className="bg-card rounded-lg border border-border p-6 text-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-primary/20 rounded-lg flex items-center justify-center">
+                <i className="fas fa-star text-primary text-xl" />
+              </div>
+              <div className="text-2xl font-bold mb-1" data-testid="text-rare-achievements">
+                {achievements?.filter((a: any) => a.category === 'milestones').length || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">Rare Achievements</p>
+            </div>
+
+            <div className="bg-card rounded-lg border border-border p-6 text-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-success/20 rounded-lg flex items-center justify-center">
+                <i className="fas fa-trophy text-success text-xl" />
+              </div>
+              <div className="text-2xl font-bold mb-1" data-testid="text-unlocked-count">
+                {unlockedCount}
+              </div>
+              <p className="text-sm text-muted-foreground">Unlocked Badges</p>
+            </div>
+
+            <div className="bg-card rounded-lg border border-border p-6 text-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-accent/20 rounded-lg flex items-center justify-center">
+                <i className="fas fa-medal text-accent text-xl" />
+              </div>
+              <div className="text-2xl font-bold mb-1" data-testid="text-total-xp-earned">
+                {userAchievements?.reduce((sum: number, ua: any) => sum + (ua.achievement?.xpReward || 0), 0) || 0}
+              </div>
+              <p className="text-sm text-muted-foreground">XP from Achievements</p>
+            </div>
+          </motion.div>
+        </div>
+      </main>
     </div>
   );
 }

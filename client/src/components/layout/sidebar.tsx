@@ -1,164 +1,128 @@
 import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
-import { 
-  Trophy, 
-  Target, 
-  Medal, 
-  User, 
-  Settings, 
-  Shield,
-  BarChart3
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import ZkEngageLogo from "@/assets/logo";
 
-interface User {
-  id: string;
-  username: string;
-  profileImage?: string;
-  level: number;
-  xp: number;
-  walletAddress?: string;
+interface SidebarProps {
+  currentPage?: string;
 }
 
-export function Sidebar() {
+export default function Sidebar({ currentPage }: SidebarProps) {
   const [location] = useLocation();
-  
-  const { data: user } = useQuery<User>({
-    queryKey: ["/api/users/me"],
-  });
+  const { user } = useAuth();
 
-  const navigation = [
-    { 
-      name: "Dashboard", 
-      href: "/", 
-      icon: BarChart3,
-      current: location === "/" 
-    },
-    { 
-      name: "Leaderboard", 
-      href: "/leaderboard", 
-      icon: Trophy,
-      current: location === "/leaderboard" 
-    },
-    { 
-      name: "Challenges", 
-      href: "/challenges", 
-      icon: Target,
-      current: location === "/challenges" 
-    },
-    { 
-      name: "Achievements", 
-      href: "/achievements", 
-      icon: Medal,
-      current: location === "/achievements" 
-    },
-    { 
-      name: "Profile", 
-      href: "/profile", 
-      icon: User,
-      current: location === "/profile" 
-    },
-    { 
-      name: "Settings", 
-      href: "/settings", 
-      icon: Settings,
-      current: location === "/settings" 
-    },
+  const navItems = [
+    { path: "/", icon: "fas fa-home", label: "Home", id: "home" },
+    { path: "/quests", icon: "fas fa-map", label: "Quests", id: "quests", hasNotification: true },
+    { path: "/achievements", icon: "fas fa-trophy", label: "Achievements", id: "achievements" },
+    { path: "/leaderboard", icon: "fas fa-crown", label: "Leaderboard", id: "leaderboard" },
+    { path: "/social", icon: "fas fa-users", label: "Social", id: "social" },
+    { path: "/profile", icon: "fas fa-user", label: "Profile", id: "profile" },
+    { path: "/settings", icon: "fas fa-cog", label: "Settings", id: "settings" },
   ];
 
-  // Calculate XP progress to next level
-  const getXPProgress = (level: number, xp: number) => {
-    const baseXP = 1000;
-    const xpForCurrentLevel = Math.floor(baseXP * Math.pow(1.5, level - 1));
-    const xpForNextLevel = Math.floor(baseXP * Math.pow(1.5, level));
-    const currentLevelXP = xp - (level > 1 ? xpForCurrentLevel : 0);
-    const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-    return Math.min((currentLevelXP / xpNeeded) * 100, 100);
+  if (user?.isAdmin) {
+    navItems.push({
+      path: "/admin",
+      icon: "fas fa-shield-alt",
+      label: "Admin",
+      id: "admin",
+    });
+  }
+
+  const isActive = (path: string, id: string) => {
+    if (currentPage) return currentPage === id;
+    return location === path || (path === "/" && location === "/");
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6 z-40">
-      {/* Logo */}
-      <div className="flex items-center gap-3 mb-8" data-testid="sidebar-logo">
-        <div className="w-10 h-10 zkverify-gradient rounded-lg flex items-center justify-center">
-          <Shield className="text-primary-foreground" size={20} />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">zkEngage</h1>
-          <p className="text-xs text-muted-foreground">Proof of Engagement</p>
-        </div>
-      </div>
+    <aside 
+      className="sidebar-nav w-64 bg-card border-r border-border fixed left-0 top-0 h-full z-40 md:relative md:translate-x-0"
+      data-testid="sidebar"
+    >
+      <div className="p-6">
+        {/* Logo Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center space-x-3 mb-8"
+        >
+          <div className="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
+            <ZkEngageLogo className="w-6 h-6 text-white" />
+          </div>
+          <span className="text-xl font-bold gradient-text" data-testid="text-app-title">
+            zkEngage
+          </span>
+        </motion.div>
 
-      {/* Navigation */}
-      <nav className="space-y-2 mb-8">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.href}>
-              <a
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors",
-                  item.current
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-                data-testid={`nav-${item.name.toLowerCase()}`}
-              >
-                <Icon size={18} />
-                <span>{item.name}</span>
-              </a>
-            </Link>
-          );
-        })}
-      </nav>
+        {/* Navigation Menu */}
+        <nav className="space-y-2">
+          {navItems.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Link href={item.path}>
+                <div
+                  className={`nav-item flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors relative ${
+                    isActive(item.path, item.id)
+                      ? "active text-foreground bg-muted"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  data-testid={`nav-${item.id}`}
+                >
+                  <i className={`${item.icon} text-lg w-5`} />
+                  <span className="font-medium">{item.label}</span>
+                  {item.hasNotification && (
+                    <div className="notification-dot absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+                  )}
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </nav>
 
-      {/* User Profile Section */}
-      <div className="absolute bottom-6 left-6 right-6">
-        {user ? (
-          <div className="bg-muted/30 rounded-lg p-4 border border-border" data-testid="user-profile">
-            <div className="flex items-center gap-3 mb-3">
-              <img 
-                src={user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
-                alt={user.username} 
-                className="w-10 h-10 rounded-full"
-                data-testid="user-avatar"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-foreground text-sm truncate" data-testid="user-name">
-                  @{user.username}
+        {/* User Profile Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-8"
+        >
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="flex items-center space-x-3">
+              <Avatar className="w-10 h-10 border-2 border-primary">
+                <AvatarImage src={user?.profileImageUrl} />
+                <AvatarFallback>
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate" data-testid="text-sidebar-user-name">
+                  {user?.firstName} {user?.lastName}
                 </p>
-                {user.walletAddress && (
-                  <p className="text-xs text-muted-foreground truncate" data-testid="user-wallet">
-                    {`${user.walletAddress.substring(0, 6)}...${user.walletAddress.slice(-4)}`}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground" data-testid="text-sidebar-user-level">
+                  Level {user?.level || 1}
+                </p>
               </div>
             </div>
-            
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="text-muted-foreground">Level {user.level}</span>
-              <span className="text-primary font-medium" data-testid="user-xp">
-                {user.xp?.toLocaleString() || 0} XP
-              </span>
-            </div>
-            
-            <Progress 
-              value={getXPProgress(user.level, user.xp)} 
-              className="h-1.5"
-              data-testid="user-progress"
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-3 text-xs"
+              onClick={() => window.location.href = "/api/logout"}
+              data-testid="button-logout"
+            >
+              <i className="fas fa-sign-out-alt mr-2" />
+              Logout
+            </Button>
           </div>
-        ) : (
-          <div className="bg-muted/30 rounded-lg p-4 border border-border text-center" data-testid="connect-prompt">
-            <Shield className="mx-auto text-muted-foreground mb-2" size={24} />
-            <p className="text-sm text-muted-foreground mb-3">Connect to get started</p>
-            <Badge variant="outline" className="text-xs">
-              Not Connected
-            </Badge>
-          </div>
-        )}
+        </motion.div>
       </div>
     </aside>
   );

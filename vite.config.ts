@@ -1,26 +1,19 @@
-// vite.config.ts
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react()],
-  root: './client',
+  // Serve the app from the `client` folder so Vite will use client/index.html
+  root: path.resolve(__dirname, "client"),
+  // Expose the server to the network (use --host or set host) so Codespaces/forwarded ports work
   server: {
-    port: 5173,   // pick a different port than your backend
-    proxy: {
-      '/api': 'http://localhost:3000', // proxy API calls to the backend server
-    },
-
+    host: true,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+  // When running Vite from the repository root we need the alias
+  // to point at the client's source directory so imports like
+  // '@/components/..' resolve to client/src
+  '@': path.resolve(__dirname, 'client', 'src'),
     },
   },
 });
