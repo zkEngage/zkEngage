@@ -1,3 +1,5 @@
+import React from "react";
+
 interface ZkEngageLogoProps {
   className?: string;
   alt?: string;
