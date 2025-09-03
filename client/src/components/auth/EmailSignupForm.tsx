@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // make sure React Router is set up
+import { useLocation } from "wouter"; 
 
 const SignupForm: React.FC = () => {
   const [firstName, setFirstName] = useState("");
@@ -9,7 +9,7 @@ const SignupForm: React.FC = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation(); 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +29,8 @@ const SignupForm: React.FC = () => {
 
     alert("Signup form submitted! (waiting for backend)");
 
-    // redirect so Airspexta can test the flow
-    navigate("/home");
+    
+    setLocation("/home");
   };
 
   return (
@@ -38,13 +38,52 @@ const SignupForm: React.FC = () => {
       onSubmit={handleSubmit}
       className="flex flex-col gap-3 max-w-md mx-auto p-4 border rounded-lg shadow"
     >
-      <input type="text" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="border p-2 rounded" />
-      <input type="text" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="border p-2 rounded" />
-      <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className="border p-2 rounded" />
-      <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="border p-2 rounded" />
-      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="border p-2 rounded" />
-      <input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="border p-2 rounded" />
-      <button type="submit" className="bg-purple-600 text-white p-2 rounded hover:bg-purple-700">
+      <input
+        type="text"
+        placeholder="First Name"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="text"
+        placeholder="Last Name"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <input
+        type="password"
+        placeholder="Confirm Password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        className="border p-2 rounded"
+      />
+      <button
+        type="submit"
+        className="bg-purple-600 text-white p-2 rounded hover:bg-purple-700"
+      >
         Sign Up
       </button>
     </form>
