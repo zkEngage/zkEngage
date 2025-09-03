@@ -6,9 +6,8 @@ import ZkEngageLogo from "@/assets/logo";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative" style={{ backgroundColor: '#0B1020' }}>
+      {/* Background color set: #190730ff */}
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -85,8 +84,8 @@ export default function Landing() {
           <Button
             size="lg"
             className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-            onClick={() => window.location.href = '/api/login'}
-            data-testid="button-login"
+            onClick={() => window.location.href = '/signup'}
+            data-testid="button-signup"
           >
             <i className="fas fa-rocket mr-2" />
             Start Your ZK Journey

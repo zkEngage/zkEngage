@@ -15,6 +15,7 @@ import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
+import SignupPage from "@/pages/Signup"; // <- add this import
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,10 +23,14 @@ function Router() {
   return (
     <Switch>
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/signup" component={SignupPage} /> {/* Add this line */}
+        </>
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/signup" component={SignupPage} /> {/* Keep this for completeness if needed */}
           <Route path="/quests" component={Quests} />
           <Route path="/achievements" component={Achievements} />
           <Route path="/leaderboard" component={Leaderboard} />
@@ -35,7 +40,7 @@ function Router() {
           <Route path="/admin" component={Admin} />
         </>
       )}
-      <Route component={NotFound} />
+  {/* <Route component={NotFound} /> */}
     </Switch>
   );
 }

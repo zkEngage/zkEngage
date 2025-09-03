@@ -12,11 +12,11 @@ export default function ZkEngageLogo({ className = "w-8 h-8", alt = "zkEngage lo
   // Render the provided image with a unique container (rounded, shadow, subtle transform)
   return (
     <div
-      className={`inline-block rounded-full overflow-hidden shadow-lg transform transition-transform duration-150 hover:scale-105 ${className}`}
+      className={`inline-block rounded-full overflow-hidden shadow-lg transform transition-transform duration-150 hover:scale-105 ${className} bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600`}
       aria-hidden={alt ? undefined : true}
       title={alt}
     >
-      <img src={src} alt={alt} className="w-full h-full object-cover block" />
+      <img src={src} alt={alt} className="w-full h-full object-cover block bg-transparent" />
     </div>
   );
 }

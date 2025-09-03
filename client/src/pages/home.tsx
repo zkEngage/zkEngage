@@ -10,6 +10,7 @@ import StatsCard from "@/components/common/stats-card";
 import QuestCard from "@/components/quests/quest-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
+
 export default function Home() {
   const { user } = useAuth();
   
@@ -56,7 +57,7 @@ export default function Home() {
           >
             {statsLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="border-border">
+                <Card key={i} className="border-border">z
                   <CardContent className="p-6">
                     <Skeleton className="h-4 w-20 mb-2" />
                     <Skeleton className="h-8 w-16" />
