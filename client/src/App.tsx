@@ -7,6 +7,8 @@ import { TooltipProvider } from "./components/ui/tooltip";
 
 // pages
 import Landing from "@/pages/landing";
+import SignupPage from "@/pages/Signup";
+import LoginPage from "@/pages/Login";
 import Home from "@/pages/home";
 import Quests from "@/pages/quests";
 import Achievements from "@/pages/achievements";
@@ -16,7 +18,6 @@ import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-import SignupPage from "@/pages/Signup";
 
 //  Temporary Router (no auth check)
 function Router() {
