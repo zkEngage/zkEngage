@@ -23,7 +23,7 @@ import {
   type InsertSocialInteraction,
   type Analytics,
   type InsertAnalytics
-} from "@shared/schema";
+} from "../shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, count, sum, avg } from "drizzle-orm";
 

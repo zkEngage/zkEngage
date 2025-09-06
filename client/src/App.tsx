@@ -18,13 +18,14 @@ import Profile from "@/pages/profile";
 import Settings from "@/pages/settings";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-
+ 
 //  Temporary Router (no auth check)
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/signup" component={SignupPage} />
+      <Route path="/login" component={LoginPage} />
       <Route path="/home" component={Home} /> 
       <Route path="/quests" component={Quests} />
       <Route path="/achievements" component={Achievements} />
@@ -37,6 +38,7 @@ function Router() {
     </Switch>
   );
 }
+
 
 function App() {
   return (

@@ -421,5 +421,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+//this is the line i added for the for the login sign
+// Email + Password Signup
+app.post("/api/auth/signup", async (req, res) => {
+  try {
+    const { firstName, lastName, username, email, password } = req.body;
+    if (!firstName || !lastName || !username || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Check if user exists
+    let existingUser = await storage.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already in use" });
+    }
+
+    // Hash password (if you are storing passwords)
+    const bcrypt = await import("bcryptjs");
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const newUser = await storage.createUser({
+      firstName,
+      lastName,
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    // Generate zk proof
+    const zkProofResult = await zkVerifyService.generateAuthProof(newUser.id, "signup");
+
+    // Generate JWT
+    const token = authService.generateJWT(newUser);
+
+    res.status(201).json({ token, user: newUser, zkProof: zkProofResult });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Email + Password Login
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
+
+    const user = await storage.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Compare password
+    const bcrypt = await import("bcryptjs");
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Generate zk proof
+    const zkProofResult = await zkVerifyService.generateAuthProof(user.id, "login");
+
+    // Generate JWT
+    const token = authService.generateJWT(user);
+
+    res.json({ token, user, zkProof: zkProofResult });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+//end solia
+  
   return httpServer;
 }

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
@@ -8,6 +9,7 @@ export default defineConfig({
   server: {
     host: true,
   },
+  plugins: [react()], // 👈 add this
   resolve: {
     alias: {
   // When running Vite from the repository root we need the alias
