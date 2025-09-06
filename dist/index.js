@@ -24,15 +24,18 @@ import {
 } from "@shared/schema";
 
 // server/db.ts
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import ws from "ws";
-import * as schema from "@shared/schema";
-neonConfig.webSocketConstructor = ws;
-if (!process.env.DATABASE_URL) {
-}
-var pool = new Pool({ connectionString: process.env.DATABASE_URL });
-var db = drizzle({ client: pool, schema });
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+var firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
+};
+var app = initializeApp(firebaseConfig);
+var db = getFirestore(app);
 
 // server/storage.ts
 import { eq, desc, and, count } from "drizzle-orm";
@@ -601,12 +604,12 @@ var insertAnalyticsSchema = createInsertSchema(analytics2).omit({
 });
 
 // server/routes.ts
-async function registerRoutes(app2) {
-  const httpServer = createServer(app2);
+async function registerRoutes(app3) {
+  const httpServer = createServer(app3);
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
-  wss.on("connection", (ws2) => {
+  wss.on("connection", (ws) => {
     console.log("WebSocket client connected");
-    ws2.on("message", (message) => {
+    ws.on("message", (message) => {
       try {
         const data = JSON.parse(message.toString());
         console.log("WebSocket message:", data);
@@ -614,7 +617,7 @@ async function registerRoutes(app2) {
         console.error("WebSocket message error:", error);
       }
     });
-    ws2.on("close", () => {
+    ws.on("close", () => {
       console.log("WebSocket client disconnected");
     });
   });
@@ -625,7 +628,7 @@ async function registerRoutes(app2) {
       }
     });
   }
-  app2.post("/api/auth/twitter/login", async (req, res) => {
+  app3.post("/api/auth/twitter/login", async (req, res) => {
     try {
       const { code, codeVerifier } = req.body;
       if (!code || !codeVerifier) {
@@ -680,7 +683,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Authentication failed" });
     }
   });
-  app2.post("/api/auth/wallet/connect", async (req, res) => {
+  app3.post("/api/auth/wallet/connect", async (req, res) => {
     try {
       const { walletAddress, walletType, signature } = req.body;
       if (!walletAddress || !walletType) {
@@ -721,7 +724,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Wallet connection failed" });
     }
   });
-  app2.get("/api/users/me", authService.authenticateToken, async (req, res) => {
+  app3.get("/api/users/me", authService.authenticateToken, async (req, res) => {
     try {
       const userId = req.userId;
       const user = await storage.getUser(userId);
@@ -740,7 +743,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get user" });
     }
   });
-  app2.get("/api/leaderboard", async (req, res) => {
+  app3.get("/api/leaderboard", async (req, res) => {
     try {
       const { timeframe = "all", limit = 50 } = req.query;
       const leaderboard = await storage.getLeaderboard(timeframe, Number(limit));
@@ -754,7 +757,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get leaderboard" });
     }
   });
-  app2.get("/api/tasks", async (req, res) => {
+  app3.get("/api/tasks", async (req, res) => {
     try {
       const tasks3 = await storage.getActiveTasks();
       res.json({ tasks: tasks3 });
@@ -763,7 +766,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get tasks" });
     }
   });
-  app2.post("/api/tasks/:taskId/complete", authService.authenticateToken, async (req, res) => {
+  app3.post("/api/tasks/:taskId/complete", authService.authenticateToken, async (req, res) => {
     try {
       const userId = req.userId;
       const taskId = req.params.taskId;
@@ -819,7 +822,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to complete task" });
     }
   });
-  app2.get("/api/achievements", async (req, res) => {
+  app3.get("/api/achievements", async (req, res) => {
     try {
       const achievements3 = await storage.getAllAchievements();
       res.json({ achievements: achievements3 });
@@ -828,7 +831,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get achievements" });
     }
   });
-  app2.post("/api/zkverify/verify", authService.authenticateToken, async (req, res) => {
+  app3.post("/api/zkverify/verify", authService.authenticateToken, async (req, res) => {
     try {
       const { proofHash } = req.body;
       if (!proofHash) {
@@ -846,7 +849,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Verification failed" });
     }
   });
-  app2.get("/api/zkverify/status", async (req, res) => {
+  app3.get("/api/zkverify/status", async (req, res) => {
     try {
       const status = await zkVerifyService.getStatus();
       res.json(status);
@@ -855,7 +858,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get zkVerify status" });
     }
   });
-  app2.get("/api/admin/analytics", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
+  app3.get("/api/admin/analytics", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
     try {
       const analytics3 = await storage.getAnalytics();
       res.json({ analytics: analytics3 });
@@ -864,7 +867,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get analytics" });
     }
   });
-  app2.post("/api/admin/tasks", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
+  app3.post("/api/admin/tasks", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
     try {
       const taskData = insertTaskSchema.parse(req.body);
       const task = await storage.createTask(taskData);
@@ -878,7 +881,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to create task" });
     }
   });
-  app2.put("/api/admin/tasks/:taskId", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
+  app3.put("/api/admin/tasks/:taskId", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
     try {
       const taskId = req.params.taskId;
       const updates = req.body;
@@ -893,7 +896,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to update task" });
     }
   });
-  app2.get("/api/admin/system-health", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
+  app3.get("/api/admin/system-health", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
     try {
       const zkVerifyStatus = await zkVerifyService.getStatus();
       const dbStatus = await storage.getHealthStatus();
@@ -907,7 +910,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to get system health" });
     }
   });
-  app2.post("/api/auth/firebase", async (req, res) => {
+  app3.post("/api/auth/firebase", async (req, res) => {
     try {
       const { uid, email, username, action } = req.body;
       if (!uid || !email || !action) {
@@ -931,6 +934,56 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to authenticate and verify user" });
     }
   });
+  app3.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { firstName, lastName, username, email, password } = req.body;
+      if (!firstName || !lastName || !username || !email || !password) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      let existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await storage.createUser({
+        firstName,
+        lastName,
+        username,
+        email,
+        password: hashedPassword
+      });
+      const zkProofResult = await zkVerifyService.generateAuthProof(newUser.id, "signup");
+      const token = authService.generateJWT(newUser);
+      res.status(201).json({ token, user: newUser, zkProof: zkProofResult });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app3.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const bcrypt = await import("bcryptjs");
+      const isValid = await bcrypt.compare(password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      const zkProofResult = await zkVerifyService.generateAuthProof(user.id, "login");
+      const token = authService.generateJWT(user);
+      res.json({ token, user, zkProof: zkProofResult });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   return httpServer;
 }
 
@@ -944,18 +997,21 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { fileURLToPath } from "url";
-var __filename = fileURLToPath(import.meta.url);
-var __dirname = path.dirname(__filename);
 var vite_config_default = defineConfig({
-  plugins: [react()],
-  root: "./client",
+  // Serve the app from the `client` folder so Vite will use client/index.html
+  root: path.resolve(__dirname, "client"),
+  // Expose the server to the network (use --host or set host) so Codespaces/forwarded ports work
   server: {
-    port: 5173
+    host: true
   },
+  plugins: [react()],
+  // 👈 add this
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client/src")
+      // When running Vite from the repository root we need the alias
+      // to point at the client's source directory so imports like
+      // '@/components/..' resolve to client/src
+      "@": path.resolve(__dirname, "client", "src")
     }
   }
 });
@@ -972,7 +1028,7 @@ function log(message, source = "express") {
   });
   console.log(`${formattedTime} [${source}] ${message}`);
 }
-async function setupVite(app2, server) {
+async function setupVite(app3, server) {
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -991,8 +1047,8 @@ async function setupVite(app2, server) {
     server: serverOptions,
     appType: "custom"
   });
-  app2.use(vite.middlewares);
-  app2.use("*", async (req, res, next) => {
+  app3.use(vite.middlewares);
+  app3.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
       const clientTemplate = path2.resolve(
@@ -1014,24 +1070,26 @@ async function setupVite(app2, server) {
     }
   });
 }
-function serveStatic(app2) {
+function serveStatic(app3) {
   const distPath = path2.resolve(import.meta.dirname, "public");
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express.static(distPath));
-  app2.use("*", (_req, res) => {
+  app3.use(express.static(distPath));
+  app3.use("*", (_req, res) => {
     res.sendFile(path2.resolve(distPath, "index.html"));
   });
 }
 
 // server/index.ts
-var app = express2();
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
-app.use((req, res, next) => {
+import dotenv from "dotenv";
+dotenv.config();
+var app2 = express2();
+app2.use(express2.json());
+app2.use(express2.urlencoded({ extended: false }));
+app2.use((req, res, next) => {
   const start = Date.now();
   const path3 = req.path;
   let capturedJsonResponse = void 0;
@@ -1056,17 +1114,17 @@ app.use((req, res, next) => {
   next();
 });
 (async () => {
-  const server = await registerRoutes(app);
-  app.use((err, _req, res, _next) => {
+  const server = await registerRoutes(app2);
+  app2.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
     throw err;
   });
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
+  if (app2.get("env") === "development") {
+    await setupVite(app2, server);
   } else {
-    serveStatic(app);
+    serveStatic(app2);
   }
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen({
