@@ -9,11 +9,44 @@ import MobileHeader from "@/components/layout/mobile-header";
 import StatsCard from "@/components/common/stats-card";
 import QuestCard from "@/components/quests/quest-card";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const { user } = useAuth();
-  
+  const [xp, setXp] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [proofCount, setProofCount] = useState(0);
+  const [taskCount, setTaskCount] = useState(0);
+  const [isNewUser, setIsNewUser] = useState(true);
+  const [showQuests, setShowQuests] = useState(false);
+  const [email, setEmail] = useState("");
+
+  // Load persisted data from localStorage
+  useEffect(() => {
+    const storedXp = localStorage.getItem("xp") || "0";
+    const storedStreak = localStorage.getItem("streak") || "0";
+    const storedProofs = localStorage.getItem("proofs") || "0";
+    const storedTasks = localStorage.getItem("tasks") || "0";
+    const enrolled = localStorage.getItem("enrolled");
+    setXp(parseInt(storedXp));
+    setStreak(parseInt(storedStreak));
+    setProofCount(parseInt(storedProofs));
+    setTaskCount(parseInt(storedTasks));
+    setIsNewUser(!enrolled);
+
+    // Check daily streak
+    const lastLogin = localStorage.getItem("lastLogin");
+    const today = new Date().toDateString();
+    if (lastLogin !== today && user) {
+      setStreak(streak + 1);
+      setXp(xp + 5); // Assume 5 XP per streak day (from admin config)
+      localStorage.setItem("streak", (streak + 1).toString());
+      localStorage.setItem("xp", (xp + 5).toString());
+      localStorage.setItem("lastLogin", today);
+    }
+  }, [user, streak, xp]);
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/users/stats"],
   });
@@ -26,13 +59,35 @@ export default function Home() {
     queryKey: ["/api/activities"],
   });
 
+  const completeQuest = (points: number) => {
+    setXp(xp + points);
+    setTaskCount(taskCount + 1);
+    localStorage.setItem("xp", (xp + points).toString());
+    localStorage.setItem("tasks", (taskCount + 1).toString());
+    if (isNewUser) {
+      localStorage.setItem("enrolled", "true");
+      setIsNewUser(false);
+    }
+    setShowQuests(false);
+  };
+
+  const generateProof = () => {
+    setProofCount(proofCount + 1);
+    setXp(xp + 5); // Assume 5 XP per proof (from admin config)
+    localStorage.setItem("proofs", (proofCount + 1).toString());
+    localStorage.setItem("xp", (xp + 5).toString());
+  };
+
+  const zkEchoQuest = () => {
+    completeQuest(15); // Unique 15 XP for zkEcho
+    console.log("zkEcho proof submitted (simulated)");
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      
       <main className="flex-1 md:ml-0">
         <MobileHeader />
-        
         <div className="p-6">
           {/* Welcome Section */}
           <motion.div
@@ -57,7 +112,7 @@ export default function Home() {
           >
             {statsLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="border-border">z
+                <Card key={i} className="border-border">
                   <CardContent className="p-6">
                     <Skeleton className="h-4 w-20 mb-2" />
                     <Skeleton className="h-8 w-16" />
@@ -68,7 +123,7 @@ export default function Home() {
               <>
                 <StatsCard
                   title="Total XP"
-                  value={stats?.totalXP?.toLocaleString() || "0"}
+                  value={(stats?.totalXP || 0 + xp).toLocaleString()} // Add local XP
                   icon="fas fa-star"
                   color="primary"
                   gradient
@@ -76,14 +131,14 @@ export default function Home() {
                 />
                 <StatsCard
                   title="Quests Completed"
-                  value={stats?.completedQuests?.toString() || "0"}
+                  value={(stats?.completedQuests || 0 + taskCount).toString()} // Add local tasks
                   icon="fas fa-check"
                   color="success"
                   testId="stats-completed-quests"
                 />
                 <StatsCard
                   title="Current Streak"
-                  value={`${stats?.streak || 0} days`}
+                  value={`${streak || stats?.streak || 0} days`} // Prioritize local streak
                   icon="fas fa-fire"
                   color="accent"
                   testId="stats-current-streak"
@@ -99,8 +154,8 @@ export default function Home() {
             )}
           </motion.div>
 
+          {/* Active Quests with New User Quests */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Active Quests */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -132,29 +187,56 @@ export default function Home() {
                         </div>
                       ))}
                     </div>
-                  ) : recentQuests?.filter((uq: any) => !uq.isCompleted).slice(0, 3).length === 0 ? (
+                  ) : recentQuests?.filter((uq: any) => !uq.isCompleted).slice(0, 3).length === 0 && isNewUser ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <i className="fas fa-map text-4xl mb-4 opacity-50" />
                       <p>No active quests yet. Start your first quest!</p>
-                      <Button className="mt-4" asChild>
-                        <Link href="/quests" data-testid="link-start-first-quest">
-                          Explore Quests
-                        </Link>
+                      <Button className="mt-4" onClick={() => setShowQuests(true)}>
+                        Start New User Quests
                       </Button>
+                      {showQuests && (
+                        <div className="mt-4 space-y-4">
+                          <div>
+                            <Input
+                              type="email"
+                              placeholder="Verify Email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                            />
+                            <Button
+                              onClick={() => completeQuest(10)}
+                              className="ml-2 mt-2"
+                            >
+                              Verify (10 XP)
+                            </Button>
+                          </div>
+                          <Button onClick={() => completeQuest(10)} className="mt-2">
+                            Connect Discord (10 XP)
+                          </Button>
+                          <Button onClick={zkEchoQuest} className="mt-2">
+                            Complete zkEcho (15 XP)
+                          </Button>
+                          <Button onClick={generateProof} className="mt-2">
+                            Generate Proof (5 XP)
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {recentQuests?.filter((uq: any) => !uq.isCompleted).slice(0, 3).map((userQuest: any) => (
-                        <QuestCard
-                          key={userQuest.quest.id}
-                          quest={userQuest.quest}
-                          progress={{
-                            current: userQuest.currentStep,
-                            total: userQuest.quest.maxSteps,
-                          }}
-                          compact
-                        />
-                      ))}
+                      {recentQuests?.filter((uq: any) => !uq.isCompleted)
+                        .slice(0, 3)
+                        .map((userQuest: any) => (
+                          <QuestCard
+                            key={userQuest.quest.id}
+                            quest={userQuest.quest}
+                            progress={{
+                              current: userQuest.currentStep,
+                              total: userQuest.quest.maxSteps,
+                            }}
+                            compact
+                          />
+                        ))}
                     </div>
                   )}
                 </CardContent>
@@ -195,25 +277,45 @@ export default function Home() {
                   ) : (
                     <div className="space-y-4">
                       {activities?.map((activity: any) => (
-                        <div key={activity.id} className="flex items-start space-x-3" data-testid={`activity-${activity.id}`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            activity.type === 'quest_completed' ? 'bg-success/20' :
-                            activity.type === 'achievement_unlocked' ? 'bg-primary/20' :
-                            activity.type === 'level_up' ? 'bg-accent/20' :
-                            'bg-muted'
-                          }`}>
-                            <i className={`text-sm ${
-                              activity.type === 'quest_completed' ? 'fas fa-check text-success' :
-                              activity.type === 'achievement_unlocked' ? 'fas fa-trophy text-primary' :
-                              activity.type === 'level_up' ? 'fas fa-arrow-up text-accent' :
-                              'fas fa-clock text-muted-foreground'
-                            }`} />
+                        <div
+                          key={activity.id}
+                          className="flex items-start space-x-3"
+                          data-testid={`activity-${activity.id}`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              activity.type === "quest_completed"
+                                ? "bg-success/20"
+                                : activity.type === "achievement_unlocked"
+                                ? "bg-primary/20"
+                                : activity.type === "level_up"
+                                ? "bg-accent/20"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <i
+                              className={`text-sm ${
+                                activity.type === "quest_completed"
+                                  ? "fas fa-check text-success"
+                                  : activity.type === "achievement_unlocked"
+                                  ? "fas fa-trophy text-primary"
+                                  : activity.type === "level_up"
+                                  ? "fas fa-arrow-up text-accent"
+                                  : "fas fa-clock text-muted-foreground"
+                              }`}
+                            />
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-sm" data-testid={`text-activity-title-${activity.id}`}>
+                            <p
+                              className="font-medium text-sm"
+                              data-testid={`text-activity-title-${activity.id}`}
+                            >
                               {activity.title}
                             </p>
-                            <p className="text-xs text-muted-foreground" data-testid={`text-activity-description-${activity.id}`}>
+                            <p
+                              className="text-xs text-muted-foreground"
+                              data-testid={`text-activity-description-${activity.id}`}
+                            >
                               {activity.description}
                             </p>
                             <span className="text-xs text-muted-foreground">
@@ -229,7 +331,7 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions with NFT Minting */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -242,29 +344,50 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-24 flex-col space-y-2" asChild>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col space-y-2"
+                    asChild
+                  >
                     <Link href="/quests" data-testid="button-explore-quests">
                       <i className="fas fa-map text-xl text-primary" />
                       <span>Explore Quests</span>
                     </Link>
                   </Button>
-                  <Button variant="outline" className="h-24 flex-col space-y-2" asChild>
-                    <Link href="/achievements" data-testid="button-view-achievements">
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col space-y-2"
+                    asChild
+                  >
+                    <Link
+                      href="/achievements"
+                      data-testid="button-view-achievements"
+                    >
                       <i className="fas fa-trophy text-xl text-accent" />
                       <span>Achievements</span>
                     </Link>
                   </Button>
-                  <Button variant="outline" className="h-24 flex-col space-y-2" asChild>
-                    <Link href="/leaderboard" data-testid="button-view-leaderboard">
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col space-y-2"
+                    asChild
+                  >
+                    <Link
+                      href="/leaderboard"
+                      data-testid="button-view-leaderboard"
+                    >
                       <i className="fas fa-crown text-xl text-yellow-500" />
                       <span>Leaderboard</span>
                     </Link>
                   </Button>
-                  <Button variant="outline" className="h-24 flex-col space-y-2" asChild>
-                    <Link href="/social" data-testid="button-community">
-                      <i className="fas fa-users text-xl text-success" />
-                      <span>Community</span>
-                    </Link>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col space-y-2"
+                    onClick={() => (xp >= 50,000 ? console.log("NFT Minted!") : alert("Need 50,000 XP to mint NFT"))}
+                    disabled={xp < 50}
+                  >
+                    <i className="fas fa-gem text-xl text-success" />
+                    <span>Mint NFT</span>
                   </Button>
                 </div>
               </CardContent>
@@ -274,4 +397,4 @@ export default function Home() {
       </main>
     </div>
   );
-}
+                  }
