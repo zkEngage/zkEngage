@@ -1,63 +1,89 @@
-import React from "react";
-import { motion } from "framer-motion";
-import EmailLoginForm from "../components/auth/EmailLoginForm";
-import WalletConnectButtons from "../components/auth/WalletConnectButtons";
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useAccount, useConnect } from 'wagmi';
+import { injected } from '@wagmi/connectors';
 
-const buttonVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: 0.2 + i * 0.1, type: "spring", stiffness: 100 },
-  }),
+const LoginPage: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+
+  const handleWalletConnect = async () => {
+    setLoading(true);
+    try {
+      connect({ connector: injected({ target: 'metaMask' }) });
+      console.log('Wallet connected:', address);
+    } catch (error) {
+      console.error('Wallet connect failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    // Simulate proof generation (to be replaced with zkVerify integration)
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 animate-slide-in">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2 animate-fade-in">Welcome Back</h1>
+          <p className="text-gray-300 animate-fade-in-up">Sign in with your wallet</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Input
+            type="text"
+            placeholder="Wallet Address"
+            value={isConnected ? address || '' : ''}
+            readOnly={isConnected}
+            className="bg-white/20 border-white/30 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-indigo-400 transition-all duration-300 animate-fade-in-up"
+          />
+          <Button
+            type="button"
+            onClick={handleWalletConnect}
+            disabled={loading || isConnected}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 hover:animate-pulse transition-all duration-300"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                Connecting...
+              </div>
+            ) : isConnected ? (
+              'Wallet Connected'
+            ) : (
+              'Connect Wallet (MetaMask/Talisman)'
+            )}
+          </Button>
+          {isConnected && (
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 hover:animate-pulse transition-all duration-300"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                  Verifying Proof...
+                </div>
+              ) : (
+                'Sign In with zkProof'
+              )}
+            </Button>
+          )}
+        </form>
+        <p className="text-center text-gray-400 mt-6 animate-fade-in-up">
+          New here? <a href="/signup" className="text-indigo-300 hover:underline">Sign Up</a>
+        </p>
+      </div>
+    </div>
+  );
 };
-
-const LoginPage: React.FC = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <motion.div
-      className="w-full max-w-md mx-4"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: "easeOut" }}
-    >
-      <div className="mb-8 text-center">
-        <motion.h1
-          className="text-3xl font-bold mb-2"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          Welcome to zkEngage
-        </motion.h1>
-        <motion.p
-          className="text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          Log in to continue proving your engagement.<br />
-          Connect wallet to access your profile.
-        </motion.p>
-      </div>
-      <div className="space-y-4">
-        <EmailLoginForm />
-      </div>
-      <div className="my-6 flex items-center gap-3">
-        <span className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">or</span>
-        <span className="flex-1 h-px bg-border" />
-      </div>
-      <WalletConnectButtons />
-      <motion.p
-        className="mt-8 text-xs text-center text-muted-foreground"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-      >
-        <span className="animate-pulse">Powered by zkVerify – your data stays private, your engagement stays real.</span>
-      </motion.p>
-    </motion.div>
-  </div>
-);
 
 export default LoginPage;

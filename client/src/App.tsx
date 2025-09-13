@@ -4,9 +4,12 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { useAccount, useConnect } from "wagmi";
+import { injected } from '@wagmi/connectors';
 
 // pages
 import Landing from "@/pages/landing";
+import LearnMore from "@/pages/learn-more";
 import SignupPage from "@/pages/Signup";
 import LoginPage from "@/pages/Login";
 import Home from "@/pages/home";
@@ -24,6 +27,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
+      <Route path="/learn-more" component={LearnMore} />
       <Route path="/signup" component={SignupPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/home" component={Home} /> 

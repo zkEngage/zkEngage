@@ -12,16 +12,195 @@ import express2 from "express";
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 
-// server/storage.ts
-import {
-  users,
-  tasks,
-  userTasks,
-  achievements,
-  userAchievements,
-  zkProofs,
-  analytics
-} from "@shared/schema";
+// shared/schema.ts
+import { sql, relations } from "drizzle-orm";
+import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+var users = pgTable("users", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  email: text("email").unique(),
+  profileImage: text("profile_image"),
+  // Authentication
+  twitterId: text("twitter_id").unique(),
+  twitterUsername: text("twitter_username"),
+  walletAddress: text("wallet_address"),
+  walletType: text("wallet_type"),
+  // "talisman", "subwallet", "walletconnect", "metamask"
+  // Gamification
+  level: integer("level").default(1),
+  xp: integer("xp").default(0),
+  totalProofs: integer("total_proofs").default(0),
+  // Status
+  isActive: boolean("is_active").default(true),
+  isAdmin: boolean("is_admin").default(false),
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var tasks = pgTable("tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(),
+  // "twitter", "engagement", "proof_generation"
+  requirements: jsonb("requirements").notNull(),
+  // Flexible requirements object
+  reward: integer("reward").notNull(),
+  // XP reward
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+var userTasks = pgTable("user_tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  taskId: uuid("task_id").references(() => tasks.id).notNull(),
+  status: text("status").notNull().default("pending"),
+  // "pending", "completed", "verified"
+  progress: integer("progress").default(0),
+  maxProgress: integer("max_progress").notNull(),
+  zkProofHash: text("zk_proof_hash"),
+  // zkVerify proof hash
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow()
+}, (table) => ({
+  userTaskUnique: unique().on(table.userId, table.taskId)
+}));
+var achievements = pgTable("achievements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  // CSS class or emoji
+  category: text("category").notNull(),
+  // "social", "proof", "engagement", "milestone"
+  rarity: text("rarity").notNull().default("common"),
+  // "common", "rare", "epic", "legendary"
+  requirements: jsonb("requirements").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var userAchievements = pgTable("user_achievements", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  achievementId: uuid("achievement_id").references(() => achievements.id).notNull(),
+  unlockedAt: timestamp("unlocked_at").defaultNow()
+}, (table) => ({
+  userAchievementUnique: unique().on(table.userId, table.achievementId)
+}));
+var zkProofs = pgTable("zk_proofs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  proofHash: text("proof_hash").notNull().unique(),
+  proofType: text("proof_type").notNull(),
+  // "authentication", "task_completion", "achievement"
+  verificationStatus: text("verification_status").notNull().default("pending"),
+  // "pending", "verified", "failed"
+  zkVerifyResponse: jsonb("zk_verify_response"),
+  // Full response from zkVerify
+  metadata: jsonb("metadata"),
+  // Additional proof metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  verifiedAt: timestamp("verified_at")
+});
+var socialInteractions = pgTable("social_interactions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  platform: text("platform").notNull(),
+  // "twitter", "discord", "telegram"
+  interactionType: text("interaction_type").notNull(),
+  // "tweet", "like", "retweet", "follow"
+  externalId: text("external_id").notNull(),
+  // Platform-specific ID
+  content: text("content"),
+  isVerified: boolean("is_verified").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+var analytics = pgTable("analytics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  metric: text("metric").notNull(),
+  // "daily_active_users", "proofs_generated", etc.
+  value: integer("value").notNull(),
+  metadata: jsonb("metadata"),
+  date: timestamp("date").defaultNow()
+});
+var usersRelations = relations(users, ({ many }) => ({
+  userTasks: many(userTasks),
+  userAchievements: many(userAchievements),
+  zkProofs: many(zkProofs),
+  socialInteractions: many(socialInteractions)
+}));
+var tasksRelations = relations(tasks, ({ many }) => ({
+  userTasks: many(userTasks)
+}));
+var userTasksRelations = relations(userTasks, ({ one }) => ({
+  user: one(users, {
+    fields: [userTasks.userId],
+    references: [users.id]
+  }),
+  task: one(tasks, {
+    fields: [userTasks.taskId],
+    references: [tasks.id]
+  })
+}));
+var achievementsRelations = relations(achievements, ({ many }) => ({
+  userAchievements: many(userAchievements)
+}));
+var userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id]
+  }),
+  achievement: one(achievements, {
+    fields: [userAchievements.achievementId],
+    references: [achievements.id]
+  })
+}));
+var zkProofsRelations = relations(zkProofs, ({ one }) => ({
+  user: one(users, {
+    fields: [zkProofs.userId],
+    references: [users.id]
+  })
+}));
+var socialInteractionsRelations = relations(socialInteractions, ({ one }) => ({
+  user: one(users, {
+    fields: [socialInteractions.userId],
+    references: [users.id]
+  })
+}));
+var insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+var insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+var insertUserTaskSchema = createInsertSchema(userTasks).omit({
+  id: true,
+  createdAt: true
+});
+var insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  createdAt: true
+});
+var insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
+  id: true
+});
+var insertZkProofSchema = createInsertSchema(zkProofs).omit({
+  id: true,
+  createdAt: true
+});
+var insertSocialInteractionSchema = createInsertSchema(socialInteractions).omit({
+  id: true,
+  createdAt: true
+});
+var insertAnalyticsSchema = createInsertSchema(analytics).omit({
+  id: true
+});
 
 // server/db.ts
 import { initializeApp } from "firebase/app";
@@ -41,7 +220,8 @@ var db = getFirestore(app);
 import { eq, desc, and, count } from "drizzle-orm";
 var DatabaseStorage = class {
   async getUser(id) {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const userDoc = await db.collection("users").doc(id).get();
+    const user = userDoc.exists ? userDoc.data() : void 0;
     return user || void 0;
   }
   async getUserByUsername(username) {
@@ -413,196 +593,6 @@ var AuthService = class {
 };
 var authService = new AuthService();
 
-// shared/schema.ts
-import { sql as sql2, relations } from "drizzle-orm";
-import { pgTable, text, integer, boolean, timestamp, jsonb, uuid, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-var users2 = pgTable("users", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email").unique(),
-  profileImage: text("profile_image"),
-  // Authentication
-  twitterId: text("twitter_id").unique(),
-  twitterUsername: text("twitter_username"),
-  walletAddress: text("wallet_address"),
-  walletType: text("wallet_type"),
-  // "talisman", "subwallet", "walletconnect", "metamask"
-  // Gamification
-  level: integer("level").default(1),
-  xp: integer("xp").default(0),
-  totalProofs: integer("total_proofs").default(0),
-  // Status
-  isActive: boolean("is_active").default(true),
-  isAdmin: boolean("is_admin").default(false),
-  // Timestamps
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var tasks2 = pgTable("tasks", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  type: text("type").notNull(),
-  // "twitter", "engagement", "proof_generation"
-  requirements: jsonb("requirements").notNull(),
-  // Flexible requirements object
-  reward: integer("reward").notNull(),
-  // XP reward
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-var userTasks2 = pgTable("user_tasks", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  userId: uuid("user_id").references(() => users2.id).notNull(),
-  taskId: uuid("task_id").references(() => tasks2.id).notNull(),
-  status: text("status").notNull().default("pending"),
-  // "pending", "completed", "verified"
-  progress: integer("progress").default(0),
-  maxProgress: integer("max_progress").notNull(),
-  zkProofHash: text("zk_proof_hash"),
-  // zkVerify proof hash
-  completedAt: timestamp("completed_at"),
-  createdAt: timestamp("created_at").defaultNow()
-}, (table) => ({
-  userTaskUnique: unique().on(table.userId, table.taskId)
-}));
-var achievements2 = pgTable("achievements", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  icon: text("icon").notNull(),
-  // CSS class or emoji
-  category: text("category").notNull(),
-  // "social", "proof", "engagement", "milestone"
-  rarity: text("rarity").notNull().default("common"),
-  // "common", "rare", "epic", "legendary"
-  requirements: jsonb("requirements").notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var userAchievements2 = pgTable("user_achievements", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  userId: uuid("user_id").references(() => users2.id).notNull(),
-  achievementId: uuid("achievement_id").references(() => achievements2.id).notNull(),
-  unlockedAt: timestamp("unlocked_at").defaultNow()
-}, (table) => ({
-  userAchievementUnique: unique().on(table.userId, table.achievementId)
-}));
-var zkProofs2 = pgTable("zk_proofs", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  userId: uuid("user_id").references(() => users2.id).notNull(),
-  proofHash: text("proof_hash").notNull().unique(),
-  proofType: text("proof_type").notNull(),
-  // "authentication", "task_completion", "achievement"
-  verificationStatus: text("verification_status").notNull().default("pending"),
-  // "pending", "verified", "failed"
-  zkVerifyResponse: jsonb("zk_verify_response"),
-  // Full response from zkVerify
-  metadata: jsonb("metadata"),
-  // Additional proof metadata
-  createdAt: timestamp("created_at").defaultNow(),
-  verifiedAt: timestamp("verified_at")
-});
-var socialInteractions2 = pgTable("social_interactions", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  userId: uuid("user_id").references(() => users2.id).notNull(),
-  platform: text("platform").notNull(),
-  // "twitter", "discord", "telegram"
-  interactionType: text("interaction_type").notNull(),
-  // "tweet", "like", "retweet", "follow"
-  externalId: text("external_id").notNull(),
-  // Platform-specific ID
-  content: text("content"),
-  isVerified: boolean("is_verified").default(false),
-  createdAt: timestamp("created_at").defaultNow()
-});
-var analytics2 = pgTable("analytics", {
-  id: uuid("id").primaryKey().default(sql2`gen_random_uuid()`),
-  metric: text("metric").notNull(),
-  // "daily_active_users", "proofs_generated", etc.
-  value: integer("value").notNull(),
-  metadata: jsonb("metadata"),
-  date: timestamp("date").defaultNow()
-});
-var usersRelations = relations(users2, ({ many }) => ({
-  userTasks: many(userTasks2),
-  userAchievements: many(userAchievements2),
-  zkProofs: many(zkProofs2),
-  socialInteractions: many(socialInteractions2)
-}));
-var tasksRelations = relations(tasks2, ({ many }) => ({
-  userTasks: many(userTasks2)
-}));
-var userTasksRelations = relations(userTasks2, ({ one }) => ({
-  user: one(users2, {
-    fields: [userTasks2.userId],
-    references: [users2.id]
-  }),
-  task: one(tasks2, {
-    fields: [userTasks2.taskId],
-    references: [tasks2.id]
-  })
-}));
-var achievementsRelations = relations(achievements2, ({ many }) => ({
-  userAchievements: many(userAchievements2)
-}));
-var userAchievementsRelations = relations(userAchievements2, ({ one }) => ({
-  user: one(users2, {
-    fields: [userAchievements2.userId],
-    references: [users2.id]
-  }),
-  achievement: one(achievements2, {
-    fields: [userAchievements2.achievementId],
-    references: [achievements2.id]
-  })
-}));
-var zkProofsRelations = relations(zkProofs2, ({ one }) => ({
-  user: one(users2, {
-    fields: [zkProofs2.userId],
-    references: [users2.id]
-  })
-}));
-var socialInteractionsRelations = relations(socialInteractions2, ({ one }) => ({
-  user: one(users2, {
-    fields: [socialInteractions2.userId],
-    references: [users2.id]
-  })
-}));
-var insertUserSchema = createInsertSchema(users2).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertTaskSchema = createInsertSchema(tasks2).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-var insertUserTaskSchema = createInsertSchema(userTasks2).omit({
-  id: true,
-  createdAt: true
-});
-var insertAchievementSchema = createInsertSchema(achievements2).omit({
-  id: true,
-  createdAt: true
-});
-var insertUserAchievementSchema = createInsertSchema(userAchievements2).omit({
-  id: true
-});
-var insertZkProofSchema = createInsertSchema(zkProofs2).omit({
-  id: true,
-  createdAt: true
-});
-var insertSocialInteractionSchema = createInsertSchema(socialInteractions2).omit({
-  id: true,
-  createdAt: true
-});
-var insertAnalyticsSchema = createInsertSchema(analytics2).omit({
-  id: true
-});
-
 // server/routes.ts
 async function registerRoutes(app3) {
   const httpServer = createServer(app3);
@@ -731,11 +721,11 @@ async function registerRoutes(app3) {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      const achievements3 = await storage.getUserAchievements(userId);
+      const achievements2 = await storage.getUserAchievements(userId);
       const activeTasks = await storage.getUserActiveTasks(userId);
       res.json({
         user,
-        achievements: achievements3,
+        achievements: achievements2,
         activeTasks
       });
     } catch (error) {
@@ -759,8 +749,8 @@ async function registerRoutes(app3) {
   });
   app3.get("/api/tasks", async (req, res) => {
     try {
-      const tasks3 = await storage.getActiveTasks();
-      res.json({ tasks: tasks3 });
+      const tasks2 = await storage.getActiveTasks();
+      res.json({ tasks: tasks2 });
     } catch (error) {
       console.error("Get tasks error:", error);
       res.status(500).json({ message: "Failed to get tasks" });
@@ -824,8 +814,8 @@ async function registerRoutes(app3) {
   });
   app3.get("/api/achievements", async (req, res) => {
     try {
-      const achievements3 = await storage.getAllAchievements();
-      res.json({ achievements: achievements3 });
+      const achievements2 = await storage.getAllAchievements();
+      res.json({ achievements: achievements2 });
     } catch (error) {
       console.error("Get achievements error:", error);
       res.status(500).json({ message: "Failed to get achievements" });
@@ -860,8 +850,8 @@ async function registerRoutes(app3) {
   });
   app3.get("/api/admin/analytics", authService.authenticateToken, authService.requireAdmin, async (req, res) => {
     try {
-      const analytics3 = await storage.getAnalytics();
-      res.json({ analytics: analytics3 });
+      const analytics2 = await storage.getAnalytics();
+      res.json({ analytics: analytics2 });
     } catch (error) {
       console.error("Get analytics error:", error);
       res.status(500).json({ message: "Failed to get analytics" });

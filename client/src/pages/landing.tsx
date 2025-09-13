@@ -1,127 +1,83 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import ZkEngageLogo from "@/assets/logo";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { FaLock, FaTrophy, FaGlobe } from 'react-icons/fa'; // Animated icons
+import zkEngageBanner from '@/assets/zkEngagebanner.png';
 
-export default function Landing() {
+interface FeatureCard {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}
+
+const LandingPage: React.FC = () => {
+  const featureCards: FeatureCard[] = [
+    { icon: <FaLock className="animate-spin-slow" />, title: 'Private Proofs', desc: 'Verify actions without data leaks.' },
+    { icon: <FaTrophy className="animate-bounce-slow" />, title: 'Earn Badges', desc: 'Unlock NFTs for real achievements.' },
+    { icon: <FaGlobe className="animate-pulse" />, title: 'Web3 Ready', desc: 'Portable across chains.' },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative" style={{ backgroundColor: '#0B1020' }}>
-      {/* Background color set: #190730ff */}
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 text-center max-w-4xl mx-auto"
-      >
-        {/* Logo and Title */}
-        <motion.div
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-center space-x-4 mb-4">
-            <ZkEngageLogo className="w-16 h-16" />
-            <h1 className="text-5xl font-bold gradient-text">zkEngage</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white overflow-hidden">
+      {/* Parallax Hero Section */}
+      <section className="relative py-20 px-4 md:px-8 parallax-section">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute top-40 left-40 w-80 h-80 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto text-center">
+          <img 
+            src={zkEngageBanner} 
+            alt="zkEngage Banner" 
+            className="mx-auto mb-8 w-64 h-32 rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-300" 
+          />
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-pink-300 bg-clip-text text-transparent animate-fade-in">
+            Unlock Private <span className="text-pink-300">Engagement</span> in Web3
+          </h1>
+          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto opacity-90 animate-fade-in-up">
+            Prove your activity with zero-knowledge. Earn badges, build reputation, and join quests—without revealing a thing.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-full shadow-lg transform hover:scale-105 hover:animate-pulse transition-all duration-300"
+              onClick={() => window.location.href = '/signup' }
+              data-testid="button-start-questing"
+            >
+              Start Questing
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-white text-white px-8 py-4 rounded-full hover:bg-white hover:text-indigo-900 hover:animate-pulse transition-all duration-300"
+              onClick={() => window.location.href = '/learn-more' }
+              data-testid="learn-more-button"
+            >
+              Learn More
+            </Button>
           </div>
-          <p className="text-xl text-muted-foreground">
-            Gamified Engagement Platform for the zkVerify Ecosystem
-          </p>
-        </motion.div>
-
-        {/* Features Grid */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
-        >
-          <Card className="glass-effect border-border/50 hover:border-primary/50 transition-all duration-300">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-primary/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-map text-primary text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Interactive Quests</h3>
-              <p className="text-sm text-muted-foreground">
-                Complete challenges, deploy ZK proofs, and earn XP while learning zkVerify
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-effect border-border/50 hover:border-primary/50 transition-all duration-300">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-accent/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-trophy text-accent text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Achievement System</h3>
-              <p className="text-sm text-muted-foreground">
-                Unlock badges, showcase expertise, and climb the global leaderboard
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-effect border-border/50 hover:border-primary/50 transition-all duration-300">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-success/20 rounded-lg flex items-center justify-center">
-                <i className="fas fa-users text-success text-xl" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Community Hub</h3>
-              <p className="text-sm text-muted-foreground">
-                Connect with developers, share knowledge, and build the ZK future together
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-        >
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white px-8 py-4 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-            onClick={() => window.location.href = '/signup'}
-            data-testid="button-signup"
-          >
-            <i className="fas fa-rocket mr-2" />
-            Start Your ZK Journey
-          </Button>
-          <p className="text-sm text-muted-foreground mt-4">
-            Join the zkVerify community and unlock the power of zero-knowledge proofs
-          </p>
-        </motion.div>
-      </motion.div>
-
-      {/* Floating Elements */}
-      <motion.div
-        animate={{
-          y: [0, -10, 0],
-          rotate: [0, 5, 0],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute top-20 left-20 w-16 h-16 bg-primary/10 rounded-full blur-sm"
-      />
-      <motion.div
-        animate={{
-          y: [0, 10, 0],
-          rotate: [0, -5, 0],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1,
-        }}
-        className="absolute bottom-20 right-20 w-20 h-20 bg-accent/10 rounded-full blur-sm"
-      />
+        </div>
+      </section>
+      
+      {/* Feature Cards */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+          {featureCards.map((card, i) => (
+            <div 
+              key={i} 
+              className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center shadow-xl hover:shadow-2xl hover:animate-pulse transition-all duration-300 animate-fade-in-up"
+              style={{ animationDelay: `${i * 200}ms` }}
+            >
+              <div className="text-4xl mb-4">{card.icon}</div>
+              <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
+              <p className="text-gray-300">{card.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
-}
+};
+
+export default LandingPage;
