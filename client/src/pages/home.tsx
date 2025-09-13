@@ -383,8 +383,12 @@ export default function Home() {
                   <Button
                     variant="outline"
                     className="h-24 flex-col space-y-2"
-                    onClick={() => (xp >= 50,000 ? console.log("NFT Minted!") : alert("Need 50,000 XP to mint NFT"))}
-                    disabled={xp < 50}
+                    onClick={() =>
+                      xp >= 50000
+                        ? console.log("NFT Minted!")
+                        : alert("Need 50,000 XP to mint NFT")
+                    }
+                    disabled={xp < 50000}
                   >
                     <i className="fas fa-gem text-xl text-success" />
                     <span>Mint NFT</span>
@@ -397,4 +401,4 @@ export default function Home() {
       </main>
     </div>
   );
-                  }
+}
