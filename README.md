@@ -58,7 +58,7 @@ zkEngagement introduces private, verifiable proofs of engagement using **zkVerif
 
 ## 🛠️ Repository Structure  
 - `client/` → Frontend (React + Vite + Tailwind)  
-- `server/` → Backend logic (TypeScript + Drizzle ORM)  
+- `server/` → Backend logic (TypeScript + Prisma Schema)  
 - `shared/` → Shared utilities & types  
 - `Web structure.md` → Project architecture & flow  
 
