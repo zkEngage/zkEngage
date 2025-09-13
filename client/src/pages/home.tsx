@@ -332,7 +332,7 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Quick Actions with NFT Minting */}
+          {/* Quick Actions with NFT Minting and Settings */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -344,7 +344,7 @@ export default function Home() {
                 <CardTitle className="text-white">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Button
                     variant="outline"
                     className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
@@ -352,7 +352,7 @@ export default function Home() {
                   >
                     <Link href="/quests" data-testid="button-explore-quests">
                       <i className="fas fa-map text-xl text-primary" />
-                      <span>Explore Quests</span>
+                      <span>Quests</span>
                     </Link>
                   </Button>
                   <Button
@@ -360,10 +360,7 @@ export default function Home() {
                     className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
                     asChild
                   >
-                    <Link
-                      href="/achievements"
-                      data-testid="button-view-achievements"
-                    >
+                    <Link href="/achievements" data-testid="button-view-achievements">
                       <i className="fas fa-trophy text-xl text-accent" />
                       <span>Achievements</span>
                     </Link>
@@ -373,12 +370,29 @@ export default function Home() {
                     className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
                     asChild
                   >
-                    <Link
-                      href="/leaderboard"
-                      data-testid="button-view-leaderboard"
-                    >
+                    <Link href="/leaderboard" data-testid="button-view-leaderboard">
                       <i className="fas fa-crown text-xl text-yellow-500" />
                       <span>Leaderboard</span>
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
+                    asChild
+                  >
+                    <Link href="/social" data-testid="button-community">
+                      <i className="fas fa-users text-xl text-success" />
+                      <span>Socials</span>
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
+                    asChild
+                  >
+                    <Link href="/settings" data-testid="button-settings">
+                      <i className="fas fa-cog text-xl text-gray-300" />
+                      <span>Settings</span>
                     </Link>
                   </Button>
                   <Button
