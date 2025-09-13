@@ -84,7 +84,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex">
       <Sidebar />
       <main className="flex-1 md:ml-0">
         <MobileHeader />
@@ -95,10 +95,10 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl font-bold mb-2" data-testid="text-welcome">
+            <h1 className="text-3xl font-bold mb-2 text-white" data-testid="text-welcome">
               Welcome back, {user?.firstName || "Developer"}! 👋
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-gray-300">
               Ready to continue your zkVerify journey? Here's what's happening today.
             </p>
           </motion.div>
@@ -112,10 +112,10 @@ export default function Home() {
           >
             {statsLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="border-border">
+                <Card key={i} className="border-white/20 bg-white/10">
                   <CardContent className="p-6">
-                    <Skeleton className="h-4 w-20 mb-2" />
-                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-4 w-20 mb-2 bg-white/20" />
+                    <Skeleton className="h-8 w-16 bg-white/20" />
                   </CardContent>
                 </Card>
               ))
@@ -162,14 +162,14 @@ export default function Home() {
               transition={{ delay: 0.2 }}
               className="lg:col-span-2"
             >
-              <Card className="border-border">
+              <Card className="border-white/20 bg-white/10">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center space-x-2">
+                    <CardTitle className="flex items-center space-x-2 text-white">
                       <i className="fas fa-map text-primary" />
                       <span>Continue Your Quests</span>
                     </CardTitle>
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" className="text-white border-white/20 hover:bg-white/20">
                       <Link href="/quests" data-testid="link-view-all-quests">
                         View All
                       </Link>
@@ -180,18 +180,18 @@ export default function Home() {
                   {questsLoading ? (
                     <div className="space-y-4">
                       {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="p-4 border border-border rounded-lg">
-                          <Skeleton className="h-4 w-32 mb-2" />
-                          <Skeleton className="h-3 w-48 mb-3" />
-                          <Skeleton className="h-2 w-full" />
+                        <div key={i} className="p-4 border border-white/20 rounded-lg bg-white/5">
+                          <Skeleton className="h-4 w-32 mb-2 bg-white/20" />
+                          <Skeleton className="h-3 w-48 mb-3 bg-white/20" />
+                          <Skeleton className="h-2 w-full bg-white/20" />
                         </div>
                       ))}
                     </div>
                   ) : recentQuests?.filter((uq: any) => !uq.isCompleted).slice(0, 3).length === 0 && isNewUser ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <i className="fas fa-map text-4xl mb-4 opacity-50" />
+                    <div className="text-center py-8 text-gray-300">
+                      <i className="fas fa-map text-4xl mb-4 opacity-50 text-white" />
                       <p>No active quests yet. Start your first quest!</p>
-                      <Button className="mt-4" onClick={() => setShowQuests(true)}>
+                      <Button className="mt-4 bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => setShowQuests(true)}>
                         Start New User Quests
                       </Button>
                       {showQuests && (
@@ -202,21 +202,22 @@ export default function Home() {
                               placeholder="Verify Email"
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
+                              className="bg-white/20 text-white border-white/20"
                             />
                             <Button
                               onClick={() => completeQuest(10)}
-                              className="ml-2 mt-2"
+                              className="ml-2 mt-2 bg-purple-600 text-white hover:bg-purple-700"
                             >
                               Verify (10 XP)
                             </Button>
                           </div>
-                          <Button onClick={() => completeQuest(10)} className="mt-2">
+                          <Button onClick={() => completeQuest(10)} className="mt-2 bg-purple-600 text-white hover:bg-purple-700">
                             Connect Discord (10 XP)
                           </Button>
-                          <Button onClick={zkEchoQuest} className="mt-2">
+                          <Button onClick={zkEchoQuest} className="mt-2 bg-purple-600 text-white hover:bg-purple-700">
                             Complete zkEcho (15 XP)
                           </Button>
-                          <Button onClick={generateProof} className="mt-2">
+                          <Button onClick={generateProof} className="mt-2 bg-purple-600 text-white hover:bg-purple-700">
                             Generate Proof (5 XP)
                           </Button>
                         </div>
@@ -249,9 +250,9 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="border-border">
+              <Card className="border-white/20 bg-white/10">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
+                  <CardTitle className="flex items-center space-x-2 text-white">
                     <i className="fas fa-clock text-accent" />
                     <span>Recent Activity</span>
                   </CardTitle>
@@ -261,17 +262,17 @@ export default function Home() {
                     <div className="space-y-4">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <div key={i} className="flex items-start space-x-3">
-                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <Skeleton className="w-8 h-8 rounded-full bg-white/20" />
                           <div className="flex-1">
-                            <Skeleton className="h-3 w-24 mb-1" />
-                            <Skeleton className="h-2 w-32" />
+                            <Skeleton className="h-3 w-24 mb-1 bg-white/20" />
+                            <Skeleton className="h-2 w-32 bg-white/20" />
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : activities?.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <i className="fas fa-clock text-4xl mb-4 opacity-50" />
+                    <div className="text-center py-8 text-gray-300">
+                      <i className="fas fa-clock text-4xl mb-4 opacity-50 text-white" />
                       <p>No recent activity yet</p>
                     </div>
                   ) : (
@@ -290,7 +291,7 @@ export default function Home() {
                                 ? "bg-primary/20"
                                 : activity.type === "level_up"
                                 ? "bg-accent/20"
-                                : "bg-muted"
+                                : "bg-white/10"
                             }`}
                           >
                             <i
@@ -301,24 +302,24 @@ export default function Home() {
                                   ? "fas fa-trophy text-primary"
                                   : activity.type === "level_up"
                                   ? "fas fa-arrow-up text-accent"
-                                  : "fas fa-clock text-muted-foreground"
+                                  : "fas fa-clock text-gray-300"
                               }`}
                             />
                           </div>
                           <div className="flex-1">
                             <p
-                              className="font-medium text-sm"
+                              className="font-medium text-sm text-white"
                               data-testid={`text-activity-title-${activity.id}`}
                             >
                               {activity.title}
                             </p>
                             <p
-                              className="text-xs text-muted-foreground"
+                              className="text-xs text-gray-300"
                               data-testid={`text-activity-description-${activity.id}`}
                             >
                               {activity.description}
                             </p>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-gray-300">
                               {new Date(activity.createdAt).toLocaleDateString()}
                             </span>
                           </div>
@@ -338,15 +339,15 @@ export default function Home() {
             transition={{ delay: 0.4 }}
             className="mt-8"
           >
-            <Card className="border-border">
+            <Card className="border-white/20 bg-white/10">
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle className="text-white">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Button
                     variant="outline"
-                    className="h-24 flex-col space-y-2"
+                    className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
                     asChild
                   >
                     <Link href="/quests" data-testid="button-explore-quests">
@@ -356,7 +357,7 @@ export default function Home() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="h-24 flex-col space-y-2"
+                    className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
                     asChild
                   >
                     <Link
@@ -369,7 +370,7 @@ export default function Home() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="h-24 flex-col space-y-2"
+                    className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
                     asChild
                   >
                     <Link
@@ -382,7 +383,7 @@ export default function Home() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="h-24 flex-col space-y-2"
+                    className="h-24 flex-col space-y-2 text-white border-white/20 hover:bg-white/20"
                     onClick={() =>
                       xp >= 50000
                         ? console.log("NFT Minted!")
