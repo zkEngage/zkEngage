@@ -1,77 +1,87 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from "wouter";
+import { useState } from 'react';
+//import { useNavigate } from "wouter"; // For redirecting
+import { useLocation } from "wouter"; // ✅ correct hook
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { injected } from '@wagmi/connectors';
 import { useAuth } from "@/hooks/useAuth";
+import { useDisconnect } from 'wagmi';
+
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
   const { isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
-  const API_URL = import.meta.env.VITE_API_URL;
+  //const navigate = useNavigate(); // redirect
+  const [, navigate] = useLocation(); // ✅ navigate is actually setLocation
+  const { disconnect } = useDisconnect();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) navigate("/home");
-  }, [isAuthenticated, navigate]);
 
-  // Automatically call backend when wallet connects
-  useEffect(() => {
-    if (!isConnected || !address) return;
+  if (isAuthenticated) {
+    navigate("/home"); // ✅ redirect if already logged in
+    return null; // stop rendering login page
+  }
 
-    const loginWithWallet = async () => {
-      setLoading(true);
-      try {
-        console.log("Wallet connected:", address);
+const handleWalletConnect = async () => {
+  setLoading(true);
+  try {
+    // 1️⃣ Connect wallet
+    connect({ connector: injected({ target: 'metaMask' }) });
 
-        const res = await fetch(`${API_URL}/api/auth/wallet-auth`, {
+    // 2️⃣ Wait until wallet is connected
+    // Note: `useAccount()` updates `isConnected` and `address` automatically
+    //if (!isConnected || !address) {
+      //console.log("Waiting for wallet connection...");
+      // Wait for 1–2 seconds or until address is populated
+      //await new Promise(resolve => setTimeout(resolve, 1500));
+    //}
+
+    if (!address) {
+      throw new Error("Wallet address not found after connecting");
+    }
+
+    console.log('Wallet connected:', address);
+
+    // 3️⃣ Call backend to login/signup wallet
+    const res = await fetch("/api/auth/wallet-auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ walletAddress: address }),
     });
 
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Backend error:", text);
-          alert("Wallet authentication failed");
-          setLoading(false);
-          return;
-        }
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Backend error:", text);
+      alert("Wallet authentication failed");
+      return;
+    }
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (data?.token) {
-          localStorage.setItem("authToken", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          navigate("/home");
-        } else {
-          alert("Wallet authentication failed: no token received");
-        }
-      } catch (err) {
-        console.error("Wallet auth failed:", err);
-        alert("Wallet connection failed");
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (data?.token) {
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/home"); // ✅ redirect after successful login
+    } else {
+      alert("Wallet authentication failed: no token received");
+    }
 
-    loginWithWallet();
-  }, [isConnected, address, navigate]);
+  } catch (err) {
+    console.error("Wallet connect failed:", err);
+    alert(`Wallet connection failed: ${(err as Error).message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleWalletConnect = () => {
-    setLoading(true);
-    connect({ connector: injected({ target: 'metaMask' }) });
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate zkProof verification
+    // Simulate proof generation (to be replaced with zkVerify integration)
     await new Promise(resolve => setTimeout(resolve, 1500));
     setLoading(false);
   };
@@ -91,8 +101,6 @@ const LoginPage: React.FC = () => {
             readOnly={isConnected}
             className="bg-white/20 border-white/30 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-indigo-400 transition-all duration-300 animate-fade-in-up"
           />
-
-          {/* Connect Wallet Button */}
           <Button
             type="button"
             onClick={handleWalletConnect}
@@ -110,8 +118,6 @@ const LoginPage: React.FC = () => {
               'Connect Wallet (MetaMask/Talisman)'
             )}
           </Button>
-
-          {/* zkProof Verification Button */}
           {isConnected && (
             <Button
               type="submit"
@@ -129,23 +135,22 @@ const LoginPage: React.FC = () => {
             </Button>
           )}
 
-          {/* Disconnect Wallet */}
-          {isConnected && (
-            <Button
-              type="button"
-              onClick={() => {
-                disconnect();
-                localStorage.removeItem("authToken");
-                localStorage.removeItem("user");
-                navigate("/login");
-              }}
-              className="w-full bg-gray-700 hover:bg-gray-800 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
-            >
-              Disconnect Wallet
-            </Button>
-          )}
+           {/* ✅ Disconnect Wallet Button (only if connected) */}
+              {isConnected && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    disconnect(); // wagmi disconnect
+                    localStorage.removeItem("authToken"); // clear your token
+                    localStorage.removeItem("user");      // clear user data
+                    navigate("/login");                   // redirect to login
+                  }}
+                  className="w-full bg-gray-700 hover:bg-gray-800 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                  Disconnect Wallet
+                </Button>
+              )}
         </form>
-
         <p className="text-center text-gray-400 mt-6 animate-fade-in-up">
           New here? <a href="/signup" className="text-indigo-300 hover:underline">Sign Up</a>
         </p>

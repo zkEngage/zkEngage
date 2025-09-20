@@ -125,3 +125,66 @@ export const api = {
     }
   },
 };
+
+
+===================
+
+
+
+import { useQuery } from "@tanstack/react-query";
+
+export function useAuth() {
+  const token = localStorage.getItem("authToken");
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["authUser"],
+    queryFn: async () => {
+      if (!token) return null;
+
+      const res = await fetch("/api/auth/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ send token
+        },
+      });
+
+      if (!res.ok) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        return null;
+      }
+
+      return res.json();
+    },
+    retry: false,
+  });
+
+  return {
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+  };
+}
+
+
+==============
+
+=============
+
+
+
+// Home.tsx
+import { Redirect } from "wouter"; // add this
+
+export default function Home() {
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) {
+    return <div className="text-white flex justify-center mt-20">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect to="/login" />; // ✅ block access if no token/user
+  }
+
+  // ... rest of your Home code
+}

@@ -1,77 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from "wouter";
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { injected } from '@wagmi/connectors';
-import { useAuth } from "@/hooks/useAuth";
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
-  const API_URL = import.meta.env.VITE_API_URL;
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) navigate("/home");
-  }, [isAuthenticated, navigate]);
-
-  // Automatically call backend when wallet connects
-  useEffect(() => {
-    if (!isConnected || !address) return;
-
-    const loginWithWallet = async () => {
-      setLoading(true);
-      try {
-        console.log("Wallet connected:", address);
-
-        const res = await fetch(`${API_URL}/api/auth/wallet-auth`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ walletAddress: address }),
-    });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Backend error:", text);
-          alert("Wallet authentication failed");
-          setLoading(false);
-          return;
-        }
-
-        const data = await res.json();
-
-        if (data?.token) {
-          localStorage.setItem("authToken", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          navigate("/home");
-        } else {
-          alert("Wallet authentication failed: no token received");
-        }
-      } catch (err) {
-        console.error("Wallet auth failed:", err);
-        alert("Wallet connection failed");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loginWithWallet();
-  }, [isConnected, address, navigate]);
-
-  const handleWalletConnect = () => {
+  const handleWalletConnect = async () => {
     setLoading(true);
-    connect({ connector: injected({ target: 'metaMask' }) });
+    try {
+      connect({ connector: injected({ target: 'metaMask' }) });
+      console.log('Wallet connected:', address);
+    } catch (error) {
+      console.error('Wallet connect failed:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate zkProof verification
+    // Simulate proof generation (to be replaced with zkVerify integration)
     await new Promise(resolve => setTimeout(resolve, 1500));
     setLoading(false);
   };
@@ -91,8 +44,6 @@ const LoginPage: React.FC = () => {
             readOnly={isConnected}
             className="bg-white/20 border-white/30 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-indigo-400 transition-all duration-300 animate-fade-in-up"
           />
-
-          {/* Connect Wallet Button */}
           <Button
             type="button"
             onClick={handleWalletConnect}
@@ -110,8 +61,6 @@ const LoginPage: React.FC = () => {
               'Connect Wallet (MetaMask/Talisman)'
             )}
           </Button>
-
-          {/* zkProof Verification Button */}
           {isConnected && (
             <Button
               type="submit"
@@ -128,24 +77,7 @@ const LoginPage: React.FC = () => {
               )}
             </Button>
           )}
-
-          {/* Disconnect Wallet */}
-          {isConnected && (
-            <Button
-              type="button"
-              onClick={() => {
-                disconnect();
-                localStorage.removeItem("authToken");
-                localStorage.removeItem("user");
-                navigate("/login");
-              }}
-              className="w-full bg-gray-700 hover:bg-gray-800 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
-            >
-              Disconnect Wallet
-            </Button>
-          )}
         </form>
-
         <p className="text-center text-gray-400 mt-6 animate-fade-in-up">
           New here? <a href="/signup" className="text-indigo-300 hover:underline">Sign Up</a>
         </p>

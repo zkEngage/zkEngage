@@ -11,9 +11,14 @@ import QuestCard from "@/components/quests/quest-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+//import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
+import { useDisconnect } from 'wagmi';
+
+
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
   const [proofCount, setProofCount] = useState(0);
@@ -21,6 +26,19 @@ export default function Home() {
   const [isNewUser, setIsNewUser] = useState(true);
   const [showQuests, setShowQuests] = useState(false);
   const [email, setEmail] = useState("");
+   // const navigate = useNavigate();
+    const [, navigate] = useLocation();
+    const { disconnect } = useDisconnect();
+
+
+
+
+    if (isLoading) return <p className="text-white">Loading...</p>;
+
+    if (!isAuthenticated) {
+      navigate("/login"); // ✅ force redirect
+      return null;
+    }
 
   // Load persisted data from localStorage
   useEffect(() => {
@@ -35,6 +53,7 @@ export default function Home() {
     setTaskCount(parseInt(storedTasks));
     setIsNewUser(!enrolled);
 
+    
     // Check daily streak
     const lastLogin = localStorage.getItem("lastLogin");
     const today = new Date().toDateString();

@@ -47,7 +47,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isCreateQuestOpen, setIsCreateQuestOpen] = useState(false);
   const [streakThreshold, setStreakThreshold] = useState(5); // XP per streak day
-  const [nftThreshold, setNftThreshold] = useState(50,000); // XP for NFT
+  const [nftThreshold, setNftThreshold] = useState(50_000); // XP for NFT
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
