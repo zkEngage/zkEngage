@@ -1,98 +1,179 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from "wouter";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAccount, useConnect } from 'wagmi';
-import { injected } from '@wagmi/connectors';
-import zkEngageBanner from '@/assets/zkEngagebanner.png';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { injected, walletConnect, coinbaseWallet } from '@wagmi/connectors';
+import { useAuth } from "@/hooks/useAuth";
+import { FaWallet } from 'react-icons/fa';
 
-const SignUpPage: React.FC = () => {
+const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  const handleWalletConnect = async () => {
-    setLoading(true);
-    try {
-      connect({ connector: injected({ target: 'metaMask' }) });
-      console.log('Wallet connected:', address);
-    } catch (error) {
-      console.error('Wallet connect failed:', error);
-    } finally {
+  useEffect(() => {
+    if (isAuthenticated) navigate("/home");
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (!isConnected || !address || loading) return;
+
+    const signupWithWallet = async () => {
+      setLoading(true);
+      try {
+        console.log("Wallet connected for signup:", address);
+
+        const res = await fetch(`${API_URL}/api/auth/wallet-signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress: address }),
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("Backend error:", text);
+          alert("Wallet signup failed");
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (data?.token) {
+          localStorage.setItem("authToken", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          navigate("/home");
+        } else {
+          alert("Wallet signup failed: no token received");
+        }
+      } catch (err) {
+        console.error("Wallet signup failed:", err);
+        alert("Wallet signup failed");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    signupWithWallet();
+  }, [isConnected, address, navigate]);
+
+  const handleButtonAction = async () => {
+    if (loading) return;
+
+    if (!isConnected) {
+      setLoading(true);
+      try {
+        let connector;
+        if (selectedWallet === 'walletconnect') {
+          connector = walletConnect({ projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID });
+        } else if (selectedWallet === 'coinbaseWallet') {
+          connector = coinbaseWallet({ appName: 'zkEngage' });
+        } else {
+          connector = injected({ target: 'metaMask' });
+        }
+        await connect({ connector });
+      } catch (err) {
+        console.error("Connection failed:", err);
+        alert("Failed to connect wallet. Ensure the extension is installed and unlocked.");
+        setLoading(false);
+      }
+    } else {
+      setLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Mock zkProof
       setLoading(false);
+      alert("zkProof verification simulated - proceed to home (mock)");
+      navigate("/home");
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // Simulate proof generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setLoading(false);
+  const handleDisconnect = () => {
+    disconnect();
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    navigate("/signup");
   };
+
+  const walletOptions = [
+    { value: 'injected', label: 'MetaMask', icon: <FaWallet className="text-orange-500" /> },
+    { value: 'walletconnect', label: 'Rainbow Wallet', icon: <FaWallet className="text-indigo-500" /> },
+    { value: 'coinbaseWallet', label: 'Coinbase Wallet', icon: <FaWallet className="text-blue-500" /> },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full grid md:grid-cols-2 gap-8 bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden animate-slide-in">
-        <div className="relative hidden md:block">
-          <img src={zkEngageBanner} alt="Join zkEngage" className="w-full h-full object-cover animate-fade-in" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-8">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2 animate-fade-in-up">Welcome to the Future</h2>
-              <p className="text-gray-300 animate-fade-in-up">Prove, Engage, Reward—Privately.</p>
-            </div>
-          </div>
+      <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 animate-slide-in">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2 animate-fade-in">Create Account</h1>
+          <p className="text-gray-300 animate-fade-in-up">Sign up with your wallet</p>
         </div>
-        <div className="p-8 flex flex-col justify-center">
-          <h1 className="text-3xl font-bold text-white mb-6 text-center animate-fade-in">Create Account</h1>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              type="text"
-              placeholder="Wallet Address"
-              value={isConnected ? address || '' : ''}
-              readOnly={isConnected}
-              className="bg-white/20 border-white/30 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-pink-400 transition-all duration-300 animate-fade-in-up"
-            />
+        <form className="space-y-6">
+          <Input
+            type="text"
+            placeholder="Wallet Address"
+            value={isConnected ? address || '' : ''}
+            readOnly={isConnected}
+            className="bg-white/20 border-white/30 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-indigo-400 transition-all duration-300 animate-fade-in-up"
+          />
+
+          {!isConnected && (
+            <div className="relative">
+              <select
+                value={selectedWallet || ''}
+                onChange={(e) => setSelectedWallet(e.target.value)}
+                className="w-full p-3 bg-white/20 text-white border-white/30 rounded-xl focus:border-indigo-400 transition-all duration-300 animate-fade-in-up appearance-none pr-10"
+              >
+                <option value="" disabled className="text-gray-400">Select EVM Wallet</option>
+                {walletOptions.map((option) => (
+                  <option key={option.value} value={option.value} className="text-white">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <FaWallet className="text-white" />
+              </div>
+            </div>
+          )}
+
+          <Button
+            type="button"
+            onClick={handleButtonAction}
+            disabled={loading || (!isConnected && !selectedWallet)}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 hover:animate-pulse transition-all duration-300"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                {isConnected ? "Verifying..." : "Connecting..."}
+              </div>
+            ) : isConnected ? (
+              'Sign Up with zkProof'
+            ) : (
+              'Connect Wallet'
+            )}
+          </Button>
+
+          {isConnected && (
             <Button
               type="button"
-              onClick={handleWalletConnect}
-              disabled={loading || isConnected}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 hover:animate-pulse transition-all duration-300"
+              onClick={handleDisconnect}
+              className="w-full bg-gray-700 hover:bg-gray-800 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
             >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                  Connecting...
-                </div>
-              ) : isConnected ? (
-                'Wallet Connected'
-              ) : (
-                'Connect Wallet (MetaMask/Talisman)'
-              )}
+              Disconnect Wallet
             </Button>
-            {isConnected && (
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 rounded-xl shadow-lg transform hover:scale-105 hover:animate-pulse transition-all duration-300"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                    Verifying Proof...
-                  </div>
-                ) : (
-                  'Sign Up with zkEngage'
-                )}
-              </Button>
-            )}
-          </form>
-          <p className="text-center text-gray-400 mt-4 animate-fade-in-up">
-            Already have an account? <a href="/login" className="text-pink-300 hover:underline">Login In</a>
-          </p>
-        </div>
+          )}
+        </form>
+        <p className="text-center text-gray-400 mt-6 animate-fade-in-up">
+          Already have an account? <a href="/login" className="text-indigo-300 hover:underline">Log In</a>
+        </p>
       </div>
     </div>
   );
 };
 
-export default SignUpPage;
+export default SignupPage;

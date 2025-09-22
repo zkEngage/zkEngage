@@ -1,6 +1,6 @@
 import { createConfig, http, WagmiProvider } from 'wagmi';
 import { mainnet, polygon, avalanche } from 'wagmi/chains';
-import { injected } from '@wagmi/connectors';
+import { coinbaseWallet, injected, walletConnect } from '@wagmi/connectors';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -9,6 +9,9 @@ export const config = createConfig({
   chains: [mainnet, polygon, avalanche],
   connectors: [
     injected({ target: 'metaMask' }),
+    walletConnect({ projectId: 'WALLETCONNECT_PROJECT_ID' }),
+    coinbaseWallet({ appName: 'zkEngage' }),
+
   ],
   transports: {
     [mainnet.id]: http(),

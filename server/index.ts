@@ -14,7 +14,7 @@ const app = express();
 // --------------------
 //app.use(cors({
   //origin: "*",
-//  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  //methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   //allowedHeaders: ["Content-Type","Authorization"],
   //credentials: true,
 //}));
@@ -33,13 +33,13 @@ app.use(express.urlencoded({ extended: false }));
 // --------------------
 // 3. Logging middleware
 // --------------------
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
+  res.json = function (bodyJson: any, ...args: any[]) {
     capturedJsonResponse = bodyJson;
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
@@ -79,13 +79,16 @@ app.use("/api/auth", authRoutes);
   });
 
   // --------------------
-  // 7. Vite or static
+  // 7. Remove Vite or static serving (previously section 7)
   // --------------------
+  // Commented out to prevent serving frontend
+  /*
   if (app.get("env") === "development") {
     await setupVite(app, app);
   } else {
     serveStatic(app);
   }
+  */
 
   // --------------------
   // 8. Start server

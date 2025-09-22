@@ -1,10 +1,3 @@
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
-
 // server/index.ts
 import express2 from "express";
 
@@ -349,10 +342,8 @@ var storage = new DatabaseStorage();
 // server/services/zkverify.ts
 import crypto from "crypto";
 var ZkVerifyService = class {
-  apiKey;
-  baseUrl = "https://api.zkverify.io";
-  relayerKey;
   constructor() {
+    this.baseUrl = "https://api.zkverify.io";
     this.apiKey = process.env.ZKVERIFY_API_KEY || "";
     this.relayerKey = process.env.ZKVERIFY_RELAYER_KEY || "";
   }
@@ -530,65 +521,48 @@ var zkVerifyService = new ZkVerifyService();
 // server/services/auth.ts
 import jwt from "jsonwebtoken";
 var AuthService = class {
-  jwtSecret;
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production";
+    this.authenticateToken = (req, res, next) => {
+      const authHeader = req.headers["authorization"];
+      const token = authHeader?.split(" ")[1];
+      if (!token) return res.status(401).json({ message: "Access token required" });
+      const payload = this.verifyJWT(token);
+      if (!payload) return res.status(403).json({ message: "Invalid or expired token" });
+      req.userId = payload.userId;
+      req.username = payload.username;
+      req.isAdmin = payload.isAdmin;
+      next();
+    };
+    this.requireAdmin = (req, res, next) => {
+      const isAdmin = req.isAdmin;
+      if (!isAdmin) return res.status(403).json({ message: "Admin access required" });
+      next();
+    };
+    this.jwtSecret = process.env.JWT_SECRET || "super-secret-key-change-in-production";
   }
   generateJWT(user) {
     const payload = {
       userId: user.id,
-      username: user.username,
-      isAdmin: user.isAdmin
+      username: user.username || "",
+      // optional
+      isAdmin: user.isAdmin || false
     };
     return jwt.sign(payload, this.jwtSecret, {
       expiresIn: "7d",
-      // Token expires in 7 days
       issuer: "zkEngage",
       audience: "zkEngage-users"
     });
   }
   verifyJWT(token) {
     try {
-      const decoded = jwt.verify(token, this.jwtSecret, {
+      return jwt.verify(token, this.jwtSecret, {
         issuer: "zkEngage",
         audience: "zkEngage-users"
       });
-      return decoded;
-    } catch (error) {
-      console.error("JWT verification error:", error);
+    } catch (err) {
+      console.error("JWT verification error:", err);
       return null;
     }
-  }
-  authenticateToken = (req, res, next) => {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "Access token required" });
-    }
-    const payload = this.verifyJWT(token);
-    if (!payload) {
-      return res.status(403).json({ message: "Invalid or expired token" });
-    }
-    req.userId = payload.userId;
-    req.username = payload.username;
-    req.isAdmin = payload.isAdmin;
-    next();
-  };
-  requireAdmin = (req, res, next) => {
-    const isAdmin = req.isAdmin;
-    if (!isAdmin) {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-    next();
-  };
-  // Generate secure state parameter for OAuth flows
-  generateState() {
-    const crypto2 = __require("crypto");
-    return crypto2.randomBytes(16).toString("hex");
-  }
-  // Verify state parameter
-  verifyState(providedState, storedState) {
-    return providedState === storedState;
   }
 };
 var authService = new AuthService();
@@ -987,21 +961,26 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = dirname(__filename);
 var vite_config_default = defineConfig({
-  // Serve the app from the `client` folder so Vite will use client/index.html
-  root: path.resolve(__dirname, "client"),
-  // Expose the server to the network (use --host or set host) so Codespaces/forwarded ports work
-  server: {
-    host: true
-  },
   plugins: [react()],
-  // 👈 add this
+  root: path.resolve(__dirname, "client"),
   resolve: {
     alias: {
-      // When running Vite from the repository root we need the alias
-      // to point at the client's source directory so imports like
-      // '@/components/..' resolve to client/src
-      "@": path.resolve(__dirname, "client", "src")
+      "@": path.resolve(__dirname, "client/src")
+    }
+  },
+  css: {
+    postcss: {
+      plugins: [
+        (await import("tailwindcss")).default({
+          config: path.resolve(__dirname, "tailwind.config.ts")
+        }),
+        (await import("autoprefixer")).default
+      ]
     }
   }
 });
@@ -1075,8 +1054,35 @@ function serveStatic(app3) {
 
 // server/index.ts
 import dotenv from "dotenv";
+
+// server/routes/authRoutes.ts
+import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
+var router = Router();
+var prisma = new PrismaClient();
+router.post("/wallet-auth", async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
+    if (!walletAddress) return res.status(400).json({ error: "Wallet required" });
+    let user = await prisma.user.findUnique({ where: { wallet: walletAddress } });
+    if (!user) {
+      user = await prisma.user.create({ data: { wallet: walletAddress } });
+    }
+    const token = authService.generateJWT(user);
+    return res.json({ token, user });
+  } catch (err) {
+    console.error("Wallet auth error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+var authRoutes_default = router;
+
+// server/index.ts
+import cors from "cors";
 dotenv.config();
 var app2 = express2();
+app2.use(cors());
+app2.options("*", cors());
 app2.use(express2.json());
 app2.use(express2.urlencoded({ extended: false }));
 app2.use((req, res, next) => {
@@ -1092,19 +1098,16 @@ app2.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path3.startsWith("/api")) {
       let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "\u2026";
-      }
+      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (logLine.length > 80) logLine = logLine.slice(0, 79) + "\u2026";
       log(logLine);
     }
   });
   next();
 });
+app2.use("/api/auth", authRoutes_default);
 (async () => {
-  const server = await registerRoutes(app2);
+  await registerRoutes(app2);
   app2.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -1112,16 +1115,12 @@ app2.use((req, res, next) => {
     throw err;
   });
   if (app2.get("env") === "development") {
-    await setupVite(app2, server);
+    await setupVite(app2, app2);
   } else {
     serveStatic(app2);
   }
   const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true
-  }, () => {
-    log(`serving on port ${port}`);
+  app2.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
+    log(`Server running on port ${port}`);
   });
 })();
