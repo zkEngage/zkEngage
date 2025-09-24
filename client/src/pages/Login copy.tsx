@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected, walletConnect, coinbaseWallet } from '@wagmi/connectors';
 import { useAuth } from "@/hooks/useAuth";
-import { FaWallet } from 'react-icons/fa';
+import { FaWallet } from 'react-icons/fa'; // Generic icons (customize with wallet-specific icons)
 
 const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -13,16 +13,13 @@ const LoginPage: React.FC = () => {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      navigate("/home");
-    }
-  }, [isAuthenticated, isLoading, navigate]);
+    if (isAuthenticated) navigate("/home");
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     if (!isConnected || !address || loading) return;
@@ -46,10 +43,9 @@ const LoginPage: React.FC = () => {
 
         const data = await res.json();
         if (data?.token) {
-          // ✅ Save to localStorage
           localStorage.setItem("authToken", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
-          // Don't navigate here — let useAuth + useEffect handle it
+          navigate("/home");
         } else {
           alert("Wallet authentication failed: no token received");
         }
@@ -62,7 +58,7 @@ const LoginPage: React.FC = () => {
     };
 
     loginWithWallet();
-  }, [isConnected, address, API_URL, loading]);
+  }, [isConnected, address, navigate]);
 
   const handleButtonAction = async () => {
     if (loading) return;
@@ -86,9 +82,10 @@ const LoginPage: React.FC = () => {
       }
     } else {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // mock zkProof
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Mock zkProof
       setLoading(false);
-      alert("zkProof verification simulated");
+      alert("zkProof verification simulated - proceed to home (mock)");
+      navigate("/home");
     }
   };
 

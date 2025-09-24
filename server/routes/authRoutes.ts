@@ -25,4 +25,25 @@ router.post("/wallet-auth", async (req, res) => {
   }
 });
 
+router.get("/profile", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: "No token provided" });
+
+    const token = authHeader.split(" ")[1];
+    const payload = authService.verifyJWT(token); // 👈 assumes you have verifyJWT in your authService
+
+    if (!payload?.id) return res.status(403).json({ error: "Invalid token" });
+
+    const user = await prisma.user.findUnique({ where: { id: payload.id } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    return res.json(user);
+  } catch (err) {
+    console.error("Profile fetch error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 export default router;

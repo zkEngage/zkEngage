@@ -91,10 +91,24 @@ app.use("/api/auth", authRoutes);
   */
 
   // --------------------
-  // 8. Start server
+  // 7. Auto-fallback port selection
   // --------------------
-  const port = parseInt(process.env.PORT || "5000", 10);
-  app.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-    log(`Server running on port ${port}`);
-  });
+  const startPort = parseInt(process.env.PORT || "5050", 10);
+
+  function startServer(port: number) {
+    const server = app.listen({ port, host: "0.0.0.0" }, () => {
+      log(`✅ Server running on port ${port}`);
+    });
+
+    server.on("error", (err: any) => {
+      if (err.code === "EADDRINUSE") {
+        log(`⚠️ Port ${port} in use, trying ${port + 1}...`);
+        startServer(port + 1); // retry with next port
+      } else {
+        throw err;
+      }
+    });
+  }
+
+  startServer(startPort);
 })();
