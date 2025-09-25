@@ -1,9 +1,10 @@
 // hooks/useAuth.ts
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+//import { useNavigate } from "wouter";
+import { useLocation } from "wouter"; // ✅ correct
 
 export function useAuth() {
-  const [, navigate] = useLocation();
+  const [, navigate] = useLocation(); // ✅ navigate now comes from useLocation()
   const token = localStorage.getItem("authToken");
 
   const { data: user, isLoading } = useQuery({
@@ -18,9 +19,10 @@ export function useAuth() {
       });
 
       if (res.status === 401 || res.status === 403) {
+        // ❌ token expired or invalid
         localStorage.removeItem("authToken");
         localStorage.removeItem("user");
-        navigate("/login");
+        navigate("/login"); // 🔄 redirect to login
         return null;
       }
 
@@ -28,12 +30,11 @@ export function useAuth() {
       return res.json();
     },
     retry: false,
-    enabled: !!token, // ✅ only run query if token exists
   });
 
   return {
     user,
     isLoading,
-    isAuthenticated: !!token && (!!user || !isLoading), // ✅ trust token during first load
+    isAuthenticated: !!user,
   };
 }

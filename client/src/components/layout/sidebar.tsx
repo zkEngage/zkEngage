@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogout } from "@/hooks/useLogout";
+
 import ZkEngageLogo from "@/assets/logo";
 
 interface SidebarProps {
@@ -13,6 +15,7 @@ interface SidebarProps {
 export default function Sidebar({ currentPage }: SidebarProps) {
   const [location] = useLocation();
   const { user } = useAuth();
+  const logout = useLogout();
 
   const navItems = [
     { path: "/", icon: "fas fa-home", label: "Home", id: "home" },
@@ -115,7 +118,9 @@ export default function Sidebar({ currentPage }: SidebarProps) {
               variant="ghost"
               size="sm"
               className="w-full mt-3 text-xs"
-              onClick={() => window.location.href = "/api/logout"}
+              //onClick={() => window.location.href = "/api/logout"}
+              //onClick={() => window.location.href = "/api/logout"}
+              onClick={logout}
               data-testid="button-logout"
             >
               <i className="fas fa-sign-out-alt mr-2" />
