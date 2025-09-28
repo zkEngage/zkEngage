@@ -8,33 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/layout/sidebar";
 import MobileHeader from "@/components/layout/mobile-header";
 import PostCard from "@/components/social/post-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Social() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user } = useAuth();
   const [postContent, setPostContent] = useState("");
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
 
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["/api/posts"],
@@ -52,22 +36,11 @@ export default function Social() {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       setPostContent("");
       toast({
-        title: "Post Created!",
+        title: "Post Created! 🎉",
         description: "Your post has been shared with the community.",
       });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
       toast({
         title: "Error",
         description: "Failed to create post. Please try again.",
@@ -91,10 +64,6 @@ export default function Social() {
     proofsVerified: 45892,
   };
 
-  if (!isLoading && !isAuthenticated) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar currentPage="social" />
@@ -109,10 +78,32 @@ export default function Social() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-6"
           >
-            <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">Community</h1>
+            <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">Community Hub</h1>
             <p className="text-muted-foreground">
-              Connect, share, and learn with the zkVerify community
+              Connect, share, and learn with the zkEngage community
             </p>
+          </motion.div>
+
+          {/* Community Welcome Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-6"
+          >
+            <Card className="bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 border-primary/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">Share Your ZK Journey</h3>
+                    <p className="text-muted-foreground">
+                      Connect with fellow developers, share insights, and build the future of zero-knowledge together
+                    </p>
+                  </div>
+                  <div className="text-3xl">🌟</div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -120,13 +111,13 @@ export default function Social() {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.2 }}
               className="lg:col-span-2"
             >
               <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <i className="fas fa-comments text-primary" />
+                    <span className="text-2xl">💬</span>
                     <span>Community Feed</span>
                   </CardTitle>
                   
@@ -140,7 +131,7 @@ export default function Social() {
                     </Avatar>
                     <div className="flex-1">
                       <Textarea
-                        placeholder="Share your zkVerify experience..."
+                        placeholder="Share your ZK discoveries, ask questions, or celebrate wins..."
                         value={postContent}
                         onChange={(e) => setPostContent(e.target.value)}
                         className="resize-none"
@@ -149,14 +140,14 @@ export default function Social() {
                       />
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm" data-testid="button-add-image">
-                            <i className="fas fa-image text-muted-foreground" />
+                          <Button variant="ghost" size="sm" data-testid="button-add-image" title="Add Image">
+                            <span className="text-lg">📷</span>
                           </Button>
-                          <Button variant="ghost" size="sm" data-testid="button-add-code">
-                            <i className="fas fa-code text-muted-foreground" />
+                          <Button variant="ghost" size="sm" data-testid="button-add-code" title="Add Code">
+                            <span className="text-lg">💻</span>
                           </Button>
-                          <Button variant="ghost" size="sm" data-testid="button-add-poll">
-                            <i className="fas fa-poll text-muted-foreground" />
+                          <Button variant="ghost" size="sm" data-testid="button-add-poll" title="Create Poll">
+                            <span className="text-lg">📊</span>
                           </Button>
                         </div>
                         <Button 
@@ -164,7 +155,7 @@ export default function Social() {
                           disabled={!postContent.trim() || createPostMutation.isPending}
                           data-testid="button-create-post"
                         >
-                          {createPostMutation.isPending ? "Posting..." : "Post"}
+                          {createPostMutation.isPending ? "Posting..." : "Share"}
                         </Button>
                       </div>
                     </div>
@@ -197,10 +188,10 @@ export default function Social() {
                     </div>
                   ) : posts?.length === 0 ? (
                     <div className="text-center py-12">
-                      <i className="fas fa-comments text-6xl text-muted-foreground/50 mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
+                      <div className="text-6xl mb-4">🚀</div>
+                      <h3 className="text-xl font-semibold mb-2">Be the First to Share!</h3>
                       <p className="text-muted-foreground">
-                        Be the first to share something with the community!
+                        Start the conversation by sharing your ZK insights with the community
                       </p>
                     </div>
                   ) : (
@@ -225,13 +216,16 @@ export default function Social() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.3 }}
               className="space-y-6"
             >
               {/* Online Friends */}
               <Card className="border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg">Online Friends</CardTitle>
+                  <CardTitle className="text-lg flex items-center">
+                    <span className="mr-2 text-green-500">🟢</span>
+                    Online Members
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {friendsLoading ? (
@@ -248,13 +242,14 @@ export default function Social() {
                     </div>
                   ) : onlineFriends?.length === 0 ? (
                     <div className="text-center py-4 text-muted-foreground">
-                      <i className="fas fa-user-friends text-2xl mb-2 opacity-50" />
-                      <p className="text-sm">No friends online</p>
+                      <div className="text-2xl mb-2">👋</div>
+                      <p className="text-sm">No one online right now</p>
+                      <p className="text-xs mt-1">Check back later!</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {onlineFriends?.slice(0, 5).map((friend: any) => (
-                        <div key={friend.id} className="flex items-center space-x-3" data-testid={`friend-${friend.id}`}>
+                        <div key={friend.id} className="flex items-center space-x-3 hover:bg-muted/50 p-2 rounded-lg transition-colors cursor-pointer" data-testid={`friend-${friend.id}`}>
                           <div className="relative">
                             <Avatar className="w-8 h-8">
                               <AvatarImage src={friend.profileImageUrl} />
@@ -282,7 +277,10 @@ export default function Social() {
               {/* Trending Topics */}
               <Card className="border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg">Trending Topics</CardTitle>
+                  <CardTitle className="text-lg flex items-center">
+                    <span className="mr-2">🔥</span>
+                    Trending Topics
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -297,33 +295,69 @@ export default function Social() {
                       </Badge>
                     ))}
                   </div>
+                  <div className="mt-4 text-xs text-muted-foreground">
+                    <p>💡 Click on topics to see related posts</p>
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Community Stats */}
               <Card className="border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg">Community Stats</CardTitle>
+                  <CardTitle className="text-lg flex items-center">
+                    <span className="mr-2">📊</span>
+                    Community Stats
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Active Users</span>
-                      <span className="text-sm font-medium" data-testid="text-active-users">
+                      <span className="text-sm font-medium text-green-600" data-testid="text-active-users">
                         {communityStats.activeUsers.toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Posts Today</span>
-                      <span className="text-sm font-medium" data-testid="text-posts-today">
+                      <span className="text-sm font-medium text-blue-600" data-testid="text-posts-today">
                         {communityStats.postsToday}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Proofs Verified</span>
-                      <span className="text-sm font-medium" data-testid="text-proofs-verified">
+                      <span className="text-sm font-medium text-purple-600" data-testid="text-proofs-verified">
                         {communityStats.proofsVerified.toLocaleString()}
                       </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Community Guidelines */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <span className="mr-2">📖</span>
+                    Community Guidelines
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-start space-x-2">
+                      <span>•</span>
+                      <span>Be respectful and constructive</span>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <span>•</span>
+                      <span>Share knowledge and learn together</span>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <span>•</span>
+                      <span>Help newcomers get started</span>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <span>•</span>
+                      <span>Keep discussions ZK-focused</span>
                     </div>
                   </div>
                 </CardContent>
