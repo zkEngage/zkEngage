@@ -953,8 +953,6 @@ async function registerRoutes(app3) {
 
 // server/vite.ts
 import express from "express";
-import fs from "fs";
-import path2 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
@@ -997,60 +995,6 @@ function log(message, source = "express") {
   });
   console.log(`${formattedTime} [${source}] ${message}`);
 }
-async function setupVite(app3, server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true
-  };
-  const vite = await createViteServer({
-    ...vite_config_default,
-    configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      }
-    },
-    server: serverOptions,
-    appType: "custom"
-  });
-  app3.use(vite.middlewares);
-  app3.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-    try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html"
-      );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e);
-      next(e);
-    }
-  });
-}
-function serveStatic(app3) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app3.use(express.static(distPath));
-  app3.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
-  });
-}
 
 // server/index.ts
 import dotenv from "dotenv";
@@ -1075,6 +1019,21 @@ router.post("/wallet-auth", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+router.get("/profile", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: "No token provided" });
+    const token = authHeader.split(" ")[1];
+    const payload = authService.verifyJWT(token);
+    if (!payload?.id) return res.status(403).json({ error: "Invalid token" });
+    const user = await prisma.user.findUnique({ where: { id: payload.id } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    return res.json(user);
+  } catch (err) {
+    console.error("Profile fetch error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 var authRoutes_default = router;
 
 // server/index.ts
@@ -1087,7 +1046,7 @@ app2.use(express2.json());
 app2.use(express2.urlencoded({ extended: false }));
 app2.use((req, res, next) => {
   const start = Date.now();
-  const path3 = req.path;
+  const path2 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -1096,8 +1055,8 @@ app2.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path3.startsWith("/api")) {
-      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
+    if (path2.startsWith("/api")) {
+      let logLine = `${req.method} ${path2} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       if (logLine.length > 80) logLine = logLine.slice(0, 79) + "\u2026";
       log(logLine);
@@ -1114,13 +1073,19 @@ app2.use("/api/auth", authRoutes_default);
     res.status(status).json({ message });
     throw err;
   });
-  if (app2.get("env") === "development") {
-    await setupVite(app2, app2);
-  } else {
-    serveStatic(app2);
+  const startPort = parseInt(process.env.PORT || "5050", 10);
+  function startServer(port) {
+    const server = app2.listen({ port, host: "0.0.0.0" }, () => {
+      log(`\u2705 Server running on port ${port}`);
+    });
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        log(`\u26A0\uFE0F Port ${port} in use, trying ${port + 1}...`);
+        startServer(port + 1);
+      } else {
+        throw err;
+      }
+    });
   }
-  const port = parseInt(process.env.PORT || "5000", 10);
-  app2.listen({ port, host: "0.0.0.0", reusePort: true }, () => {
-    log(`Server running on port ${port}`);
-  });
+  startServer(startPort);
 })();
