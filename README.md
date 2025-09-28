@@ -81,9 +81,11 @@ cd zkEngage
 npm install
 
 # Run Frontend server
-npm run dev 
+cd client
+npm run client
 
-# Run development server  
+# Run development server 
+cd server
 npm run dev
 
 
